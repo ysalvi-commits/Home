@@ -7,6 +7,17 @@ const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
 const SHARE_HASH_PREFIX = "#tasks=";
 const PULL_REFRESH_THRESHOLD = 82;
 const AUTO_REFRESH_AFTER_HIDDEN_MS = 15_000;
+const FIREBASE_SDK_VERSION = "12.7.0";
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyC8bUQPoGdfPoCAW1ixpdNH1IOODqE7tlw",
+  authDomain: "neta-yarden-todo.firebaseapp.com",
+  databaseURL: "https://neta-yarden-todo-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "neta-yarden-todo",
+  storageBucket: "neta-yarden-todo.firebasestorage.app",
+  messagingSenderId: "909390695587",
+  appId: "1:909390695587:web:ab3d56341cd3975fc34316"
+};
+const FIREBASE_LIST_PATH = "lists/neta-yarden";
 
 const uiState = {
   activeTab: "open",
@@ -14,6 +25,16 @@ const uiState = {
   swipe: null,
   refresh: null,
   hiddenAt: 0
+};
+
+const syncState = {
+  api: null,
+  listRef: null,
+  ready: false,
+  firstSnapshot: true,
+  localMigrationStarted: false,
+  failed: false,
+  pendingPatches: []
 };
 
 const state = loadState();
@@ -43,6 +64,7 @@ elements.userNameInput.value = readUserName();
 render();
 bindEvents();
 registerServiceWorker();
+initializeSharedBackend();
 
 function bindEvents() {
   elements.addForm.addEventListener("submit", (event) => {
@@ -154,10 +176,11 @@ function normalizeSnapshot(snapshot) {
   }
 
   return {
-    tasks: Array.isArray(snapshot.tasks) ? snapshot.tasks.map(normalizeTask).filter(Boolean) : [],
-    completedTasks: Array.isArray(snapshot.completedTasks)
-      ? snapshot.completedTasks.map(normalizeCompletedTask).filter(Boolean)
-      : [],
+    tasks: collectionToArray(snapshot.tasks).map(normalizeTask).filter(Boolean).sort(sortTasks),
+    completedTasks: collectionToArray(snapshot.completedTasks)
+      .map(normalizeCompletedTask)
+      .filter(Boolean)
+      .sort(sortCompletedTasks),
     updatedAt: snapshot.updatedAt || new Date().toISOString()
   };
 }
@@ -169,6 +192,7 @@ function normalizeTask(task) {
   return {
     id: String(task.id || newId()),
     title,
+    createdAt: task.createdAt || new Date().toISOString(),
     completed: Boolean(task.completed || task.checked || task.done || (Array.isArray(task.checkedBy) && task.checkedBy.length))
   };
 }
@@ -195,6 +219,7 @@ function addTask() {
   const task = {
     id: newId(),
     title,
+    createdAt: new Date().toISOString(),
     completed: false
   };
 
@@ -202,6 +227,7 @@ function addTask() {
   elements.taskInput.value = "";
   saveState();
   render();
+  writeTaskToRemote(task);
 
   if (elements.sendEmailToggle.checked) {
     notifyTaskAdded(task);
@@ -216,17 +242,19 @@ function finishTask(taskId) {
   if (index === -1) return;
 
   const [task] = state.tasks.splice(index, 1);
-  state.completedTasks.unshift({
+  const completedTask = {
     id: newId(),
     title: task.title,
     doneBy: readUserName() || "Someone",
     doneAt: new Date().toISOString()
-  });
+  };
+  state.completedTasks.unshift(completedTask);
 
   uiState.editingTaskId = "";
   uiState.activeTab = "done";
   saveState();
   render();
+  completeTaskInRemote(task.id, completedTask);
   celebrateSnails();
   toast("Achievement unlocked.");
 }
@@ -239,6 +267,7 @@ function removeTask(taskId) {
   if (uiState.editingTaskId === taskId) uiState.editingTaskId = "";
   saveState();
   render();
+  removeTaskFromRemote(taskId);
   toast("Task removed.");
 }
 
@@ -272,6 +301,7 @@ function saveEditedTask(taskId) {
   uiState.editingTaskId = "";
   saveState();
   render();
+  updateTaskTitleInRemote(task);
   toast("Task updated.");
 }
 
@@ -436,10 +466,16 @@ function refreshApp() {
   elements.pullRefresh.classList.add("is-active", "is-loading");
   elements.pullRefresh.style.setProperty("--pull-distance", "74px");
 
+  if (syncState.ready) {
+    refreshFromRemote().finally(() => {
+      window.setTimeout(resetPullRefresh, 360);
+    });
+    return;
+  }
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.getRegistration().then((registration) => registration?.update()).catch(() => undefined);
   }
-
   window.setTimeout(() => {
     window.location.reload();
   }, 260);
@@ -462,6 +498,10 @@ function maybeAutoRefresh() {
   if (!uiState.hiddenAt) return;
   if (Date.now() - uiState.hiddenAt < AUTO_REFRESH_AFTER_HIDDEN_MS) return;
   if (uiState.editingTaskId || elements.taskInput.value.trim()) return;
+  if (syncState.ready) {
+    refreshFromRemote();
+    return;
+  }
   refreshApp();
 }
 
@@ -642,9 +682,177 @@ async function shareApp() {
   }
 }
 
-function saveState() {
-  state.updatedAt = new Date().toISOString();
+function saveState({ refreshUpdatedAt = true } = {}) {
+  if (refreshUpdatedAt) state.updatedAt = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+async function initializeSharedBackend() {
+  try {
+    const [{ initializeApp }, authModule, databaseModule] = await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-auth.js`),
+      import(`https://www.gstatic.com/firebasejs/${FIREBASE_SDK_VERSION}/firebase-database.js`)
+    ]);
+
+    const app = initializeApp(FIREBASE_CONFIG);
+    const auth = authModule.getAuth(app);
+    const database = databaseModule.getDatabase(app);
+    syncState.api = {
+      onAuthStateChanged: authModule.onAuthStateChanged,
+      signInAnonymously: authModule.signInAnonymously,
+      ref: databaseModule.ref,
+      onValue: databaseModule.onValue,
+      get: databaseModule.get,
+      set: databaseModule.set,
+      update: databaseModule.update
+    };
+    syncState.listRef = syncState.api.ref(database, FIREBASE_LIST_PATH);
+
+    syncState.api.onAuthStateChanged(auth, (user) => {
+      if (!user || syncState.ready) return;
+      syncState.ready = true;
+      listenToRemoteTasks();
+    });
+
+    await syncState.api.signInAnonymously(auth);
+  } catch (error) {
+    syncState.failed = true;
+    console.warn("Live sync unavailable", error);
+    toast("Live sync is not connected.");
+  }
+}
+
+function listenToRemoteTasks() {
+  syncState.api.onValue(
+    syncState.listRef,
+    (snapshot) => applyRemoteSnapshot(snapshot.val()),
+    (error) => {
+      syncState.failed = true;
+      console.warn("Live sync permission error", error);
+      toast("Live sync failed. Check Firebase rules.");
+    }
+  );
+}
+
+function applyRemoteSnapshot(remoteValue) {
+  const remoteSnapshot = normalizeSnapshot(remoteValue);
+  const remoteIsEmpty = !remoteSnapshot.tasks.length && !remoteSnapshot.completedTasks.length;
+  const localHasData = Boolean(state.tasks.length || state.completedTasks.length);
+
+  if (syncState.firstSnapshot && remoteIsEmpty && localHasData && !syncState.localMigrationStarted) {
+    syncState.localMigrationStarted = true;
+    syncState.firstSnapshot = false;
+    writeFullSnapshotToRemote()
+      .then(flushPendingRemotePatches)
+      .catch((error) => {
+        console.warn("Initial live sync migration failed", error);
+        toast("Could not upload local tasks.");
+      });
+    return;
+  }
+
+  syncState.firstSnapshot = false;
+  state.tasks = remoteSnapshot.tasks;
+  state.completedTasks = remoteSnapshot.completedTasks;
+  state.updatedAt = remoteSnapshot.updatedAt;
+  saveState({ refreshUpdatedAt: false });
+  render();
+  flushPendingRemotePatches();
+}
+
+async function refreshFromRemote() {
+  if (!syncState.ready || !syncState.api || !syncState.listRef) return;
+
+  try {
+    const snapshot = await syncState.api.get(syncState.listRef);
+    applyRemoteSnapshot(snapshot.val());
+    toast("Updated.");
+  } catch (error) {
+    console.warn("Refresh failed", error);
+    toast("Could not refresh.");
+  }
+}
+
+function writeTaskToRemote(task) {
+  return updateRemote({
+    [`tasks/${task.id}`]: serializeTask(task),
+    updatedAt: new Date().toISOString()
+  });
+}
+
+function updateTaskTitleInRemote(task) {
+  return updateRemote({
+    [`tasks/${task.id}/title`]: task.title,
+    [`tasks/${task.id}/updatedAt`]: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  });
+}
+
+function removeTaskFromRemote(taskId) {
+  return updateRemote({
+    [`tasks/${taskId}`]: null,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+function completeTaskInRemote(taskId, completedTask) {
+  return updateRemote({
+    [`tasks/${taskId}`]: null,
+    [`completedTasks/${completedTask.id}`]: completedTask,
+    updatedAt: new Date().toISOString()
+  });
+}
+
+function writeFullSnapshotToRemote() {
+  if (!syncState.ready || !syncState.api || !syncState.listRef) return Promise.resolve();
+
+  const payload = {
+    tasks: state.tasks.reduce((tasks, task) => {
+      tasks[task.id] = serializeTask(task);
+      return tasks;
+    }, {}),
+    completedTasks: state.completedTasks.reduce((tasks, task) => {
+      tasks[task.id] = task;
+      return tasks;
+    }, {}),
+    updatedAt: state.updatedAt || new Date().toISOString()
+  };
+
+  return syncState.api.set(syncState.listRef, payload);
+}
+
+function updateRemote(patch) {
+  if (!syncState.ready || !syncState.api || !syncState.listRef) {
+    syncState.pendingPatches.push(patch);
+    return Promise.resolve();
+  }
+
+  return syncState.api.update(syncState.listRef, patch).catch((error) => {
+    console.warn("Live sync write failed", error);
+    toast("Live sync failed.");
+  });
+}
+
+function flushPendingRemotePatches() {
+  if (!syncState.pendingPatches.length || !syncState.ready || !syncState.api || !syncState.listRef) return;
+
+  const patches = syncState.pendingPatches.splice(0);
+  const mergedPatch = Object.assign({}, ...patches);
+  syncState.api.update(syncState.listRef, mergedPatch).catch((error) => {
+    syncState.pendingPatches.unshift(...patches);
+    console.warn("Live sync retry failed", error);
+    toast("Live sync failed.");
+  });
+}
+
+function serializeTask(task) {
+  return {
+    id: task.id,
+    title: task.title,
+    createdAt: task.createdAt || new Date().toISOString(),
+    completed: Boolean(task.completed)
+  };
 }
 
 function newId() {
@@ -653,12 +861,7 @@ function newId() {
 }
 
 function getShareLink() {
-  if (!state.tasks.length && !state.completedTasks.length) return APP_LINK;
-  return `${APP_LINK}${SHARE_HASH_PREFIX}${encodeShareState({
-    tasks: state.tasks,
-    completedTasks: state.completedTasks,
-    updatedAt: state.updatedAt
-  })}`;
+  return APP_LINK;
 }
 
 function readSharedState() {
@@ -780,6 +983,19 @@ function formatDateTime(value) {
 
 function simplify(value) {
   return String(value).toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function collectionToArray(value) {
+  if (!value) return [];
+  return Array.isArray(value) ? value : Object.values(value);
+}
+
+function sortTasks(a, b) {
+  return String(b.createdAt || "").localeCompare(String(a.createdAt || ""));
+}
+
+function sortCompletedTasks(a, b) {
+  return String(b.doneAt || "").localeCompare(String(a.doneAt || ""));
 }
 
 function readJson(value) {

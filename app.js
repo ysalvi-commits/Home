@@ -64,6 +64,12 @@ const categoryRules = [
 ];
 
 const state = loadState();
+const uiState = {
+  editingItemId: "",
+  pendingDeleteId: "",
+  swipe: null,
+  lastSwipeAt: 0
+};
 const elements = {
   neededCount: document.querySelector("#neededCount"),
   neededSummary: document.querySelector("#neededSummary"),
@@ -79,6 +85,17 @@ const elements = {
   learnReceiptButton: document.querySelector("#learnReceiptButton"),
   learnSummary: document.querySelector("#learnSummary"),
   saveStatus: document.querySelector("#saveStatus"),
+  editDialog: document.querySelector("#editDialog"),
+  editForm: document.querySelector("#editForm"),
+  editNameInput: document.querySelector("#editNameInput"),
+  editCategoryInput: document.querySelector("#editCategoryInput"),
+  editNoteInput: document.querySelector("#editNoteInput"),
+  categoryOptions: document.querySelector("#categoryOptions"),
+  cancelEditButton: document.querySelector("#cancelEditButton"),
+  deleteDialog: document.querySelector("#deleteDialog"),
+  deleteMessage: document.querySelector("#deleteMessage"),
+  cancelDeleteButton: document.querySelector("#cancelDeleteButton"),
+  confirmDeleteButton: document.querySelector("#confirmDeleteButton"),
   toast: document.querySelector("#toast")
 };
 
@@ -187,8 +204,25 @@ function bindEvents() {
   elements.groceryList.addEventListener("change", (event) => {
     const checkbox = event.target.closest("input[data-id]");
     if (!checkbox) return;
+    if (Date.now() - uiState.lastSwipeAt < 450) {
+      const entry = findItem(checkbox.dataset.id);
+      if (entry) checkbox.checked = entry.needed;
+      return;
+    }
     setNeeded(checkbox.dataset.id, checkbox.checked);
   });
+
+  elements.groceryList.addEventListener("click", (event) => {
+    if (Date.now() - uiState.lastSwipeAt < 450) return;
+    const editButton = event.target.closest("button[data-action='edit']");
+    if (!editButton) return;
+    openEditDialog(editButton.dataset.id);
+  });
+
+  elements.groceryList.addEventListener("touchstart", startRowSwipe, { passive: true });
+  elements.groceryList.addEventListener("touchmove", moveRowSwipe, { passive: false });
+  elements.groceryList.addEventListener("touchend", endRowSwipe);
+  elements.groceryList.addEventListener("touchcancel", cancelRowSwipe);
 
   elements.neededList.addEventListener("click", (event) => {
     const button = event.target.closest("button[data-id]");
@@ -219,6 +253,13 @@ function bindEvents() {
   elements.learnReceiptButton.addEventListener("click", learnFromReceipt);
   elements.receiptFile.addEventListener("change", readReceiptFile);
   elements.receiptCamera.addEventListener("change", scanReceiptImage);
+  elements.editForm.addEventListener("submit", saveEditedItem);
+  elements.cancelEditButton.addEventListener("click", closeEditDialog);
+  elements.editDialog.addEventListener("click", closeModalOnBackdrop);
+  elements.editNameInput.addEventListener("input", syncEditedCategory);
+  elements.confirmDeleteButton.addEventListener("click", confirmDeleteItem);
+  elements.cancelDeleteButton.addEventListener("click", closeDeleteDialog);
+  elements.deleteDialog.addEventListener("click", closeModalOnBackdrop);
 }
 
 function render() {
@@ -283,15 +324,21 @@ function renderList() {
             .join(" · ");
 
           return `
-            <label class="grocery-row ${entry.needed ? "is-needed" : ""}">
-              <input type="checkbox" data-id="${escapeHtml(entry.id)}" ${entry.needed ? "checked" : ""} />
-              <span class="check-ui" aria-hidden="true"></span>
-              <span class="item-copy">
-                <strong>${escapeHtml(entry.name)}</strong>
-                ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
-              </span>
-              <span class="row-state">${entry.needed ? "חסר" : "יש"}</span>
-            </label>
+            <div class="swipe-row">
+              <div class="swipe-delete-bg">הסר</div>
+              <div class="grocery-row ${entry.needed ? "is-needed" : ""}" data-id="${escapeHtml(entry.id)}">
+                <label class="row-main">
+                  <input type="checkbox" data-id="${escapeHtml(entry.id)}" ${entry.needed ? "checked" : ""} />
+                  <span class="check-ui" aria-hidden="true"></span>
+                  <span class="item-copy">
+                    <strong>${escapeHtml(entry.name)}</strong>
+                    ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+                  </span>
+                  <span class="row-state">${entry.needed ? "חסר" : "יש"}</span>
+                </label>
+                <button class="row-edit-button" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" aria-label="עריכת ${escapeHtml(entry.name)}">ערוך</button>
+              </div>
+            </div>
           `;
         })
         .join("");
@@ -307,11 +354,15 @@ function renderList() {
 }
 
 function setNeeded(id, needed) {
-  const entry = state.items.find((candidate) => candidate.id === id);
+  const entry = findItem(id);
   if (!entry) return;
   entry.needed = needed;
   saveState(needed ? "סומן כחסר" : "סומן כנקנה");
   render();
+}
+
+function findItem(id) {
+  return state.items.find((candidate) => candidate.id === id);
 }
 
 function addItem(name) {
@@ -328,6 +379,156 @@ function addItem(name) {
   elements.newItemInput.value = "";
   saveState("נוסף לרשימה");
   render();
+}
+
+function openEditDialog(id) {
+  const entry = findItem(id);
+  if (!entry) return;
+  uiState.editingItemId = id;
+  renderCategoryOptions();
+  elements.editNameInput.value = entry.name;
+  elements.editCategoryInput.value = entry.category || guessCategory(entry.name);
+  elements.editCategoryInput.dataset.autoCategory = elements.editCategoryInput.value;
+  elements.editNoteInput.value = entry.note;
+  elements.editDialog.hidden = false;
+  elements.editNameInput.focus();
+  elements.editNameInput.select();
+}
+
+function closeEditDialog() {
+  elements.editDialog.hidden = true;
+  uiState.editingItemId = "";
+}
+
+function saveEditedItem(event) {
+  event.preventDefault();
+  const entry = findItem(uiState.editingItemId);
+  if (!entry) return closeEditDialog();
+
+  const name = elements.editNameInput.value.trim();
+  const category = elements.editCategoryInput.value.trim() || guessCategory(name);
+  const note = elements.editNoteInput.value.trim();
+  if (!name) {
+    toast("צריך שם מוצר.");
+    return;
+  }
+
+  const duplicate = state.items.find(
+    (candidate) => candidate.id !== entry.id && simplify(candidate.name) === simplify(name)
+  );
+  if (duplicate) {
+    toast("כבר יש מוצר בשם הזה.");
+    return;
+  }
+
+  entry.name = name;
+  entry.category = category;
+  entry.note = note;
+  saveState("המוצר עודכן");
+  closeEditDialog();
+  render();
+}
+
+function syncEditedCategory() {
+  const name = elements.editNameInput.value.trim();
+  const current = elements.editCategoryInput.value.trim();
+  const previousAuto = elements.editCategoryInput.dataset.autoCategory || "";
+  if (!name || (current && current !== previousAuto)) return;
+  const nextCategory = guessCategory(name);
+  elements.editCategoryInput.value = nextCategory;
+  elements.editCategoryInput.dataset.autoCategory = nextCategory;
+}
+
+function renderCategoryOptions() {
+  const categories = new Set([
+    ...categoryRules.map((rule) => rule.category),
+    ...defaultItems.map((entry) => entry.category),
+    ...state.items.map((entry) => entry.category).filter(Boolean),
+    "מזווה"
+  ]);
+  elements.categoryOptions.innerHTML = [...categories]
+    .sort((a, b) => a.localeCompare(b, "he"))
+    .map((category) => `<option value="${escapeHtml(category)}"></option>`)
+    .join("");
+}
+
+function startRowSwipe(event) {
+  const row = event.target.closest(".grocery-row");
+  if (!row || event.target.closest("button")) return;
+  const touch = event.touches[0];
+  uiState.swipe = {
+    row,
+    id: row.dataset.id,
+    startX: touch.clientX,
+    startY: touch.clientY,
+    dx: 0,
+    dy: 0,
+    active: true
+  };
+}
+
+function moveRowSwipe(event) {
+  const swipe = uiState.swipe;
+  if (!swipe?.active) return;
+  const touch = event.touches[0];
+  swipe.dx = touch.clientX - swipe.startX;
+  swipe.dy = touch.clientY - swipe.startY;
+  if (Math.abs(swipe.dy) > Math.abs(swipe.dx)) return;
+  if (swipe.dx >= 0) return;
+
+  event.preventDefault();
+  const offset = Math.max(swipe.dx, -92);
+  swipe.row.style.transform = `translateX(${offset}px)`;
+  swipe.row.classList.add("is-swiping");
+}
+
+function endRowSwipe() {
+  const swipe = uiState.swipe;
+  if (!swipe?.active) return;
+  resetSwipeRow(swipe.row);
+  uiState.swipe = null;
+
+  if (swipe.dx < -72 && Math.abs(swipe.dy) < 48) {
+    uiState.lastSwipeAt = Date.now();
+    openDeleteDialog(swipe.id);
+  }
+}
+
+function cancelRowSwipe() {
+  if (uiState.swipe?.row) resetSwipeRow(uiState.swipe.row);
+  uiState.swipe = null;
+}
+
+function resetSwipeRow(row) {
+  row.style.transform = "";
+  row.classList.remove("is-swiping");
+}
+
+function openDeleteDialog(id) {
+  const entry = findItem(id);
+  if (!entry) return;
+  uiState.pendingDeleteId = id;
+  elements.deleteMessage.textContent = `להסיר את ${entry.name} מהרשימה?`;
+  elements.deleteDialog.hidden = false;
+}
+
+function closeDeleteDialog() {
+  elements.deleteDialog.hidden = true;
+  uiState.pendingDeleteId = "";
+}
+
+function confirmDeleteItem() {
+  const entry = findItem(uiState.pendingDeleteId);
+  if (!entry) return closeDeleteDialog();
+  state.items = state.items.filter((candidate) => candidate.id !== entry.id);
+  saveState("המוצר הוסר");
+  closeDeleteDialog();
+  render();
+}
+
+function closeModalOnBackdrop(event) {
+  if (event.target === elements.editDialog) closeEditDialog();
+  if (event.target === elements.deleteDialog) closeDeleteDialog();
 }
 
 function learnFromReceipt() {
@@ -676,6 +877,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=category-rules-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=edit-delete-1").catch(() => undefined);
   });
 }

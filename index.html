@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=category-rules-1" />
+    <link rel="stylesheet" href="./styles.css?v=edit-delete-1" />
   </head>
   <body>
     <main class="app-shell">
@@ -75,7 +75,39 @@
 
     <input id="receiptFile" class="receipt-file-input" type="file" accept=".pdf,application/pdf,.txt,.csv,.json,text/*" />
     <input id="receiptCamera" class="receipt-file-input" type="file" accept="image/*" capture="environment" />
+    <div id="editDialog" class="modal-backdrop" hidden>
+      <form id="editForm" class="modal-card">
+        <h2>עריכת מוצר</h2>
+        <label>
+          שם מוצר
+          <input id="editNameInput" type="text" autocomplete="off" required />
+        </label>
+        <label>
+          קטגוריה
+          <input id="editCategoryInput" type="text" autocomplete="off" list="categoryOptions" />
+          <datalist id="categoryOptions"></datalist>
+        </label>
+        <label>
+          מותג / גודל
+          <input id="editNoteInput" type="text" autocomplete="off" />
+        </label>
+        <div class="modal-actions">
+          <button id="cancelEditButton" class="secondary-button" type="button">בטל</button>
+          <button type="submit">שמור</button>
+        </div>
+      </form>
+    </div>
+    <div id="deleteDialog" class="modal-backdrop" hidden>
+      <div class="modal-card">
+        <h2>להסיר מוצר?</h2>
+        <p id="deleteMessage">המוצר יוסר מהרשימה.</p>
+        <div class="modal-actions">
+          <button id="cancelDeleteButton" class="secondary-button" type="button">בטל</button>
+          <button id="confirmDeleteButton" class="danger-button" type="button">הסר</button>
+        </div>
+      </div>
+    </div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=category-rules-1" type="module"></script>
+    <script src="./app.js?v=edit-delete-1" type="module"></script>
   </body>
 </html>

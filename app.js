@@ -15,7 +15,7 @@ const defaultItems = [
   item("אורז", "מזווה", false, "סוגת פרסי · 1 ק״ג"),
   item("פתיתים", "מזווה", false, "אסם אפויים · 500 גרם"),
   item("שקדי מרק", "מזווה", false, "אסם · 400 גרם"),
-  item("חמאת בוטנים", "מזווה", false, "סקיפי קרמי · 462 גרם"),
+  item("חמאת בוטנים", "מזווה", false, "בטר & דיפרנט טבעית · 1 ק״ג"),
   item("עדשים שחורות", "מזווה", false, "סוגת · 500 גרם"),
   item("תרכיז עגבניות", "מזווה", false, "פריניר · 260 גרם"),
   item("קינמון", "מזווה", false, "תבליני מימון טחון · 80 גרם"),
@@ -635,6 +635,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=product-details-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=product-details-2").catch(() => undefined);
   });
 }

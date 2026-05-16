@@ -56,10 +56,6 @@ button {
 }
 
 .app-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
   padding: 4px 2px 18px;
 }
 
@@ -98,19 +94,6 @@ h3 {
   color: var(--muted);
   font-size: 13px;
   font-weight: 780;
-}
-
-.save-pill {
-  flex: 0 0 auto;
-  min-height: 34px;
-  padding: 8px 12px;
-  color: var(--accent-strong);
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  font-size: 13px;
-  font-weight: 780;
-  backdrop-filter: blur(18px);
 }
 
 .needed-card,
@@ -435,14 +418,6 @@ h3 {
   border-top: 1px solid rgba(60, 60, 67, 0.08);
 }
 
-.category-group {
-  padding-top: 10px;
-}
-
-.category-group h3 {
-  padding: 0 16px 8px;
-}
-
 .swipe-row {
   position: relative;
   overflow: hidden;
@@ -672,11 +647,6 @@ h3 {
 
   .app-header {
     align-items: flex-start;
-  }
-
-  .save-pill {
-    max-width: 124px;
-    text-align: center;
   }
 
   .list-heading {

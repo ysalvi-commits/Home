@@ -2,7 +2,7 @@
   "name": "Home Groceries - Ofri & Rom",
   "short_name": "Groceries",
   "description": "A simple smart grocery helper for Ofri and Rom.",
-  "start_url": "./index.html?v=friendly-tabs-1",
+  "start_url": "./index.html?v=friendly-tabs-2",
   "display": "standalone",
   "background_color": "#f7f7f8",
   "theme_color": "#f1eeff",

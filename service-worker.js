@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "home-shopping-agent-";
-const CACHE_NAME = `${CACHE_PREFIX}v16`;
+const CACHE_NAME = `${CACHE_PREFIX}v17`;
 const ASSETS = [
   "./",
   "./index.html",

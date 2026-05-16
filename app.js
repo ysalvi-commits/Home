@@ -90,7 +90,6 @@ const elements = {
   receiptCamera: document.querySelector("#receiptCamera"),
   learnReceiptButton: document.querySelector("#learnReceiptButton"),
   learnSummary: document.querySelector("#learnSummary"),
-  saveStatus: document.querySelector("#saveStatus"),
   editDialog: document.querySelector("#editDialog"),
   editForm: document.querySelector("#editForm"),
   editNameInput: document.querySelector("#editNameInput"),
@@ -334,43 +333,32 @@ function renderList() {
     if (a.needed !== b.needed) return a.needed ? -1 : 1;
     return b.purchaseCount - a.purchaseCount || a.name.localeCompare(b.name, "he");
   });
-  const groups = groupBy(sorted, (entry) => entry.category);
-  elements.groceryList.innerHTML = [...groups.entries()]
-    .map(([category, entries]) => {
-      const rows = entries
-        .map((entry) => {
-          const meta = [
-            entry.note,
-            entry.purchaseCount ? `Bought ${entry.purchaseCount} time${entry.purchaseCount === 1 ? "" : "s"}` : "",
-            entry.lastBoughtAt ? `Updated ${formatDate(entry.lastBoughtAt)}` : ""
-          ]
-            .filter(Boolean)
-            .join(" · ");
-
-          return `
-            <div class="swipe-row">
-              <div class="grocery-row ${entry.needed ? "is-needed" : ""}" data-id="${escapeHtml(entry.id)}">
-                <button class="row-content" type="button" data-action="${uiState.activeTab === "toBuy" ? "mark-bought" : "add-to-buy"}" data-id="${escapeHtml(entry.id)}">
-                  <span class="item-copy">
-                    <strong>${escapeHtml(entry.name)}</strong>
-                    ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
-                  </span>
-                </button>
-                <div class="row-actions">
-                  <button class="row-buy-button ${entry.needed ? "is-selected" : ""}" type="button" data-action="add-to-buy" data-id="${escapeHtml(entry.id)}">${entry.needed ? "Added" : "To Buy"}</button>
-                  <button class="row-edit-button" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}">Edit</button>
-                </div>
-              </div>
-            </div>
-          `;
-        })
-        .join("");
+  elements.groceryList.innerHTML = sorted
+    .map((entry) => {
+      const meta = [
+        entry.note,
+        entry.category,
+        entry.purchaseCount ? `Bought ${entry.purchaseCount} time${entry.purchaseCount === 1 ? "" : "s"}` : "",
+        entry.lastBoughtAt ? `Updated ${formatDate(entry.lastBoughtAt)}` : ""
+      ]
+        .filter(Boolean)
+        .join(" · ");
 
       return `
-        <section class="category-group">
-          <h3>${escapeHtml(category)}</h3>
-          ${rows}
-        </section>
+        <div class="swipe-row">
+          <div class="grocery-row ${entry.needed ? "is-needed" : ""}" data-id="${escapeHtml(entry.id)}">
+            <button class="row-content" type="button" data-action="add-to-buy" data-id="${escapeHtml(entry.id)}">
+              <span class="item-copy">
+                <strong>${escapeHtml(entry.name)}</strong>
+                ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
+              </span>
+            </button>
+            <div class="row-actions">
+              <button class="row-buy-button ${entry.needed ? "is-selected" : ""}" type="button" data-action="add-to-buy" data-id="${escapeHtml(entry.id)}">${entry.needed ? "Added" : "To Buy"}</button>
+              <button class="row-edit-button" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}">Edit</button>
+            </div>
+          </div>
+        </div>
       `;
     })
     .join("");
@@ -690,13 +678,11 @@ async function scanReceiptImage(event) {
   }
 
   try {
-    elements.saveStatus.textContent = "Scanning receipt...";
     toast("Scanning receipt photo...");
     const text = await readImageText(file);
     learnFromReceiptText(text, "Could not find products in the photo.");
   } catch {
     toast("Could not scan the photo. Try a closer, clearer picture.");
-    elements.saveStatus.textContent = "Saved on this device";
   } finally {
     event.target.value = "";
   }
@@ -732,13 +718,7 @@ async function readReceiptText(file) {
 
 async function readImageText(file) {
   const Tesseract = await loadTesseract();
-  const result = await Tesseract.recognize(file, "heb+eng", {
-    logger: (message) => {
-      if (message.status === "recognizing text" && Number.isFinite(message.progress)) {
-        elements.saveStatus.textContent = `Scanning ${Math.round(message.progress * 100)}%`;
-      }
-    }
-  });
+  const result = await Tesseract.recognize(file, "heb+eng");
   return result.data.text || "";
 }
 
@@ -935,10 +915,7 @@ function readSharedState() {
 function saveState(message) {
   state.updatedAt = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  elements.saveStatus.textContent = message || "Saved on this device";
-  window.setTimeout(() => {
-    elements.saveStatus.textContent = "Saved on this device";
-  }, 1200);
+  if (message) toast(message);
 }
 
 function toast(message) {
@@ -947,16 +924,6 @@ function toast(message) {
   window.setTimeout(() => {
     elements.toast.hidden = true;
   }, 1800);
-}
-
-function groupBy(items, getKey) {
-  const map = new Map();
-  items.forEach((entry) => {
-    const key = getKey(entry);
-    if (!map.has(key)) map.set(key, []);
-    map.get(key).push(entry);
-  });
-  return map;
 }
 
 function readJson(value) {
@@ -994,6 +961,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=friendly-tabs-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=friendly-tabs-2").catch(() => undefined);
   });
 }

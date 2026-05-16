@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/app-icon.png" type="image/png" />
     <link rel="apple-touch-icon" href="./assets/app-icon.png" />
-    <link rel="stylesheet" href="./styles.css?v=todo-7" />
+    <link rel="stylesheet" href="./styles.css?v=todo-8" />
   </head>
   <body>
     <button id="settingsButton" class="settings-button" type="button" aria-label="Settings">
@@ -23,12 +23,12 @@
     </button>
     <main class="app-shell">
       <header class="hero">
-        <img class="hero-photo" src="./assets/app-photo.jpeg" alt="Neta and Yarden" />
+        <img class="hero-photo" src="./assets/app-photo-left.jpeg" alt="Neta and Yarden" />
         <div class="hero-copy">
           <p class="subtitle">Neta and Yarden</p>
           <h1>To Do</h1>
         </div>
-        <img class="hero-photo" src="./assets/app-photo.jpeg" alt="Neta and Yarden" />
+        <img class="hero-photo" src="./assets/app-photo-right.jpeg" alt="Neta and Yarden" />
       </header>
 
       <section class="summary-panel" aria-labelledby="summaryTitle">
@@ -40,6 +40,10 @@
       </section>
 
       <form id="addForm" class="add-panel" autocomplete="off">
+        <nav class="tabs" aria-label="Tasks">
+          <button id="openTab" type="button" class="is-active">Open</button>
+          <button id="doneTab" type="button">Wins</button>
+        </nav>
         <div class="add-row">
           <input id="taskInput" type="text" inputmode="text" dir="rtl" placeholder="משימה חדשה" aria-label="New task" />
           <button type="submit">Add</button>
@@ -50,11 +54,6 @@
           <span>Send email</span>
         </label>
       </form>
-
-      <nav class="tabs" aria-label="Tasks">
-        <button id="openTab" type="button" class="is-active">Open</button>
-        <button id="doneTab" type="button">Wins</button>
-      </nav>
 
       <section class="task-panel" aria-labelledby="taskListTitle">
         <div class="section-heading">
@@ -88,6 +87,6 @@
 
     <div id="snailParty" class="snail-party" aria-hidden="true"></div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=todo-7" type="module"></script>
+    <script src="./app.js?v=todo-8" type="module"></script>
   </body>
 </html>

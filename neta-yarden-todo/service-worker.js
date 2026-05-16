@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "neta-yarden-todo-";
-const CACHE_NAME = `${CACHE_PREFIX}v7`;
+const CACHE_NAME = `${CACHE_PREFIX}v8`;
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,7 +7,8 @@ const ASSETS = [
   "./app.js",
   "./manifest.webmanifest",
   "./assets/app-icon.png",
-  "./assets/app-photo.jpeg"
+  "./assets/app-photo-left.jpeg",
+  "./assets/app-photo-right.jpeg"
 ];
 
 self.addEventListener("install", (event) => {

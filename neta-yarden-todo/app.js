@@ -6,14 +6,6 @@ const RECIPIENTS = ["yardensalvi@gmail.com", "barakneta1@gmail.com"];
 const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
 const SHARE_HASH_PREFIX = "#tasks=";
 
-const STATUS_OPTIONS = [
-  { id: "ready", label: "Ready" },
-  { id: "progress", label: "In Progress" },
-  { id: "stuck", label: "Stuck" }
-];
-const STATUS_IDS = new Set(STATUS_OPTIONS.map((status) => status.id));
-const STATUS_ALIASES = new Map([["open", "ready"]]);
-
 const uiState = {
   activeTab: "open",
   editingTaskId: "",
@@ -66,12 +58,6 @@ function bindEvents() {
   elements.taskList.addEventListener("click", (event) => {
     if (uiState.swipe?.completed) {
       event.preventDefault();
-      return;
-    }
-
-    const statusButton = closestElement(event.target, "button[data-status-id]");
-    if (statusButton) {
-      setTaskStatus(statusButton.dataset.statusId, statusButton.dataset.statusValue);
       return;
     }
 
@@ -173,7 +159,6 @@ function normalizeTask(task) {
   return {
     id: String(task.id || newId()),
     title,
-    status: normalizeStatus(task.status),
     completed: Boolean(task.completed || task.checked || task.done || (Array.isArray(task.checkedBy) && task.checkedBy.length))
   };
 }
@@ -185,15 +170,9 @@ function normalizeCompletedTask(task) {
   return {
     id: String(task.id || newId()),
     title,
-    status: normalizeStatus(task.status),
     doneBy: String(task.doneBy || task.completedBy || task.finishedBy || "Someone").trim(),
     doneAt: task.doneAt || task.completedAt || task.finishedAt || new Date().toISOString()
   };
-}
-
-function normalizeStatus(status) {
-  const value = STATUS_ALIASES.get(String(status || "")) || String(status || "ready");
-  return STATUS_IDS.has(value) ? value : "ready";
 }
 
 function addTask() {
@@ -206,7 +185,6 @@ function addTask() {
   const task = {
     id: newId(),
     title,
-    status: "ready",
     completed: false
   };
 
@@ -223,15 +201,6 @@ function addTask() {
   }
 }
 
-function setTaskStatus(taskId, status) {
-  const task = findTask(taskId);
-  if (!task) return;
-
-  task.status = normalizeStatus(status);
-  saveState();
-  render();
-}
-
 function finishTask(taskId) {
   const index = state.tasks.findIndex((task) => task.id === taskId);
   if (index === -1) return;
@@ -240,7 +209,6 @@ function finishTask(taskId) {
   state.completedTasks.unshift({
     id: newId(),
     title: task.title,
-    status: task.status,
     doneBy: readUserName() || "Someone",
     doneAt: new Date().toISOString()
   });
@@ -456,8 +424,10 @@ function renderTask(task) {
       <div class="swipe-complete-bg" aria-hidden="true">Done</div>
       <div class="task-content">
         ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
-        ${renderStatusControls(task)}
-        <div class="swipe-hint">Swipe to complete</div>
+        <div class="swipe-cue" aria-hidden="true">
+          <span>Swipe me to done</span>
+          <strong>→</strong>
+        </div>
       </div>
     </article>
   `;
@@ -489,25 +459,6 @@ function renderEditTaskTitle(task) {
   `;
 }
 
-function renderStatusControls(task) {
-  return `
-    <div class="status-row" aria-label="Status">
-      ${STATUS_OPTIONS.map(
-        (status) => `
-          <button
-            type="button"
-            data-status-id="${escapeHtml(task.id)}"
-            data-status-value="${status.id}"
-            class="status-chip status-${status.id} ${task.status === status.id ? "is-active" : ""}"
-          >
-            ${status.label}
-          </button>
-        `
-      ).join("")}
-    </div>
-  `;
-}
-
 function renderCompletedTask(task) {
   return `
     <article class="task-item completed-task">
@@ -515,7 +466,6 @@ function renderCompletedTask(task) {
         <strong dir="auto">${escapeHtml(task.title)}</strong>
         <small class="done-meta">${escapeHtml(`Completed by ${task.doneBy}`)} · ${escapeHtml(formatDateTime(task.doneAt))}</small>
       </div>
-      <span class="completed-status status-${task.status}">${escapeHtml(statusLabel(task.status))}</span>
     </article>
   `;
 }
@@ -664,7 +614,6 @@ function mergeOpenTasks(primaryTasks, secondaryTasks) {
     const existing = byTitle.get(key);
     if (existing) {
       existing.completed = existing.completed || task.completed;
-      if (existing.status === "ready" && task.status !== "ready") existing.status = task.status;
       return;
     }
 
@@ -688,10 +637,6 @@ function mergeCompletedTasks(primaryTasks, secondaryTasks) {
   });
 
   return merged.sort((a, b) => String(b.doneAt).localeCompare(String(a.doneAt)));
-}
-
-function statusLabel(status) {
-  return STATUS_OPTIONS.find((candidate) => candidate.id === status)?.label || "Ready";
 }
 
 function readUserName() {

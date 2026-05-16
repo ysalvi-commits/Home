@@ -9,12 +9,6 @@
   --accent: #4b7cf3;
   --accent-strong: #2959cf;
   --accent-soft: #edf4ff;
-  --ready-text: #275bd6;
-  --ready-bg: #eaf2ff;
-  --progress-text: #7659d6;
-  --progress-bg: #f0ecff;
-  --stuck-text: #be5268;
-  --stuck-bg: #ffecef;
   --shadow: 0 18px 52px rgba(35, 58, 118, 0.1);
   font-family: "Ploni", "Ploni ML v2 AAA", "Ploni DL 1.1 AAA", "Heebo", "Assistant", "Noto Sans Hebrew", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
@@ -87,18 +81,18 @@ p {
 }
 
 .app-shell {
-  width: min(680px, calc(100% - 28px));
+  width: min(620px, calc(100% - 28px));
   min-height: 100dvh;
   margin-inline: auto;
-  padding: calc(22px + env(safe-area-inset-top)) 0 calc(30px + env(safe-area-inset-bottom));
+  padding: calc(16px + env(safe-area-inset-top)) 0 calc(26px + env(safe-area-inset-bottom));
 }
 
 .hero {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr) 116px;
+  grid-template-columns: 92px minmax(0, 1fr) 92px;
   align-items: center;
-  gap: 16px;
-  padding: 6px 2px 20px;
+  gap: 12px;
+  padding: 4px 2px 12px;
   direction: ltr;
 }
 
@@ -116,7 +110,7 @@ p {
 }
 
 h1 {
-  font-size: 58px;
+  font-size: 50px;
   line-height: 0.94;
   font-weight: 860;
 }
@@ -128,11 +122,11 @@ h2 {
 }
 
 .hero-photo {
-  width: 108px;
-  height: 108px;
+  width: 88px;
+  height: 88px;
   object-fit: cover;
   border: 4px solid rgba(255, 255, 255, 0.94);
-  border-radius: 30px;
+  border-radius: 24px;
   box-shadow: 0 16px 36px rgba(35, 58, 118, 0.18);
 }
 
@@ -141,7 +135,7 @@ h2 {
 }
 
 .hero-photo:last-child {
-  object-position: 74% 34%;
+  object-position: 50% 34%;
 }
 
 .summary-panel,
@@ -159,7 +153,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 18px;
+  padding: 12px 14px;
   background:
     linear-gradient(135deg, rgba(237, 244, 255, 0.98), rgba(255, 255, 255, 0.78) 60%),
     var(--surface);
@@ -176,21 +170,21 @@ h2 {
 #taskCount {
   display: grid;
   place-items: center;
-  width: 58px;
-  height: 58px;
+  width: 48px;
+  height: 48px;
   flex: 0 0 auto;
   color: white;
   background: linear-gradient(180deg, #6c96ff, var(--accent-strong));
-  border-radius: 18px;
-  font-size: 26px;
+  border-radius: 16px;
+  font-size: 23px;
   font-weight: 850;
 }
 
 .add-panel {
   display: grid;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 10px;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px;
 }
 
 .add-row {
@@ -211,7 +205,7 @@ h2 {
 }
 
 .add-row input {
-  min-height: 50px;
+  min-height: 46px;
   flex: 1 1 auto;
   padding: 0 14px;
   direction: rtl;
@@ -223,7 +217,7 @@ h2 {
 .add-row button,
 .save-edit-button,
 .save-settings-button {
-  min-height: 50px;
+  min-height: 46px;
   padding-inline: 18px;
   color: white;
   background: var(--accent);
@@ -295,7 +289,7 @@ h2 {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
-  margin-top: 12px;
+  margin-top: 0;
   padding: 4px;
   background: rgba(75, 124, 243, 0.09);
   border: 1px solid rgba(75, 124, 243, 0.08);
@@ -303,7 +297,7 @@ h2 {
 }
 
 .tabs button {
-  min-height: 40px;
+  min-height: 36px;
   color: var(--muted);
   background: transparent;
   border-radius: 14px;
@@ -317,7 +311,7 @@ h2 {
 }
 
 .task-panel {
-  margin-top: 12px;
+  margin-top: 8px;
   overflow: hidden;
 }
 
@@ -326,7 +320,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 62px;
+  min-height: 50px;
   padding: 0 16px;
 }
 
@@ -370,10 +364,10 @@ h2 {
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 12px;
-  min-height: 132px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.97);
+  gap: 10px;
+  min-height: 94px;
+  padding: 14px;
+  background: #ffffff;
   transition: transform 180ms ease;
   will-change: transform;
 }
@@ -390,11 +384,14 @@ h2 {
     var(--accent-soft);
   font-size: 18px;
   font-weight: 860;
+  opacity: 0;
+  transition: opacity 160ms ease;
 }
 
 .swipe-task.is-swipe-ready .swipe-complete-bg {
   color: white;
   background: linear-gradient(90deg, #88a9ff, var(--accent));
+  opacity: 1;
 }
 
 .task-title {
@@ -410,7 +407,7 @@ h2 {
 
 .task-title strong {
   overflow-wrap: anywhere;
-  font-size: 18px;
+  font-size: 17px;
   line-height: 1.24;
   font-weight: 800;
 }
@@ -469,55 +466,41 @@ h2 {
   background: rgba(118, 118, 128, 0.12);
 }
 
-.status-row {
+.swipe-cue {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 12px;
+  color: var(--accent-strong);
+  background:
+    linear-gradient(90deg, rgba(234, 242, 255, 0.96), rgba(255, 255, 255, 0.82)),
+    var(--accent-soft);
+  border: 1px solid rgba(75, 124, 243, 0.14);
+  border-radius: 15px;
+  font-size: 14px;
+  font-weight: 840;
+}
+
+.swipe-cue strong {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: white;
+  background: var(--accent);
+  border-radius: 50%;
+  font-size: 16px;
+  transition: transform 180ms ease;
 }
 
-.status-chip {
-  min-height: 36px;
-  padding: 0 10px;
-  color: var(--muted);
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(53, 68, 102, 0.09);
-  border-radius: 13px;
-  font-size: 13px;
-  font-weight: 820;
-}
-
-.status-chip.is-active {
-  border-color: transparent;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.58);
-}
-
-.status-ready.is-active,
-.completed-status.status-ready {
-  color: var(--ready-text);
-  background: var(--ready-bg);
-}
-
-.status-progress.is-active,
-.completed-status.status-progress {
-  color: var(--progress-text);
-  background: var(--progress-bg);
-}
-
-.status-stuck.is-active,
-.completed-status.status-stuck {
-  color: var(--stuck-text);
-  background: var(--stuck-bg);
-}
-
-.swipe-hint {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.3;
-  font-weight: 760;
+.swipe-task.is-swipe-ready .swipe-cue strong {
+  transform: translateX(6px);
 }
 
 .completed-task {
-  padding: 16px;
+  padding: 14px;
 }
 
 .done-meta {
@@ -529,17 +512,8 @@ h2 {
   font-weight: 720;
 }
 
-.completed-status {
-  width: fit-content;
-  padding: 6px 10px;
-  border: 1px solid rgba(53, 68, 102, 0.08);
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 850;
-}
-
 .empty-list {
-  padding: 30px 18px 34px;
+  padding: 24px 18px 28px;
   color: var(--muted);
   text-align: center;
   font-size: 15px;
@@ -693,25 +667,25 @@ h2 {
   }
 
   .app-shell {
-    width: min(100% - 22px, 680px);
-    padding-top: calc(58px + env(safe-area-inset-top));
+    width: min(100% - 22px, 620px);
+    padding-top: calc(54px + env(safe-area-inset-top));
   }
 
   .hero {
-    grid-template-columns: 80px minmax(0, 1fr) 80px;
+    grid-template-columns: 72px minmax(0, 1fr) 72px;
     gap: 8px;
     padding-top: 2px;
   }
 
   .hero-photo {
-    width: 76px;
-    height: 76px;
+    width: 68px;
+    height: 68px;
     border-width: 3px;
-    border-radius: 22px;
+    border-radius: 20px;
   }
 
   h1 {
-    font-size: 44px;
+    font-size: 40px;
   }
 
   .subtitle {
@@ -719,15 +693,7 @@ h2 {
   }
 
   .summary-panel {
-    padding: 16px;
-  }
-
-  .add-row {
-    flex-direction: column;
-  }
-
-  .add-row button {
-    width: 100%;
+    padding: 12px;
   }
 
   .email-toggle {
@@ -736,20 +702,13 @@ h2 {
     padding: 0 2px 0 4px;
   }
 
-  .task-title-row,
-  .task-actions,
   .task-edit-actions {
     align-items: stretch;
     flex-direction: column;
   }
 
-  .task-actions button,
   .task-edit-actions button {
     width: 100%;
-  }
-
-  .status-row {
-    grid-template-columns: 1fr;
   }
 }
 

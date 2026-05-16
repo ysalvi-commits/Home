@@ -26,8 +26,8 @@ html {
 body {
   margin: 0;
   min-height: 100%;
-  direction: rtl;
-  text-align: right;
+  direction: ltr;
+  text-align: left;
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   background:
@@ -38,7 +38,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -130,6 +131,37 @@ h3 {
     var(--surface);
 }
 
+.view-panel[hidden] {
+  display: none;
+}
+
+.app-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+  background: rgba(247, 247, 248, 0.9);
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  border-radius: 999px;
+  box-shadow: 0 10px 28px rgba(31, 31, 35, 0.05);
+}
+
+.app-tabs button {
+  min-height: 42px;
+  color: var(--muted);
+  background: transparent;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 840;
+}
+
+.app-tabs button[aria-selected="true"] {
+  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 18px rgba(31, 31, 35, 0.08);
+}
+
 .card-heading,
 .list-heading,
 .needed-item,
@@ -167,6 +199,7 @@ h3 {
   display: grid;
   gap: 8px;
   margin-top: 16px;
+  direction: rtl;
 }
 
 .needed-item {
@@ -183,6 +216,7 @@ h3 {
   display: grid;
   gap: 2px;
   min-width: 0;
+  text-align: right;
 }
 
 .needed-copy strong {
@@ -234,7 +268,7 @@ h3 {
 
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -275,6 +309,8 @@ h3 {
 .add-form input,
 #searchInput {
   min-width: 0;
+  direction: rtl;
+  text-align: right;
   color: var(--text);
   background: rgba(255, 255, 255, 0.68);
   border: 1px solid rgba(60, 60, 67, 0.1);
@@ -346,7 +382,7 @@ h3 {
 
 .receipt-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -387,32 +423,6 @@ h3 {
   padding: 16px 16px 12px;
 }
 
-.list-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin: 0 16px 12px;
-  padding: 4px;
-  background: rgba(247, 247, 248, 0.9);
-  border: 1px solid rgba(60, 60, 67, 0.1);
-  border-radius: 999px;
-}
-
-.list-tabs button {
-  min-height: 38px;
-  color: var(--muted);
-  background: transparent;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 820;
-}
-
-.list-tabs button[aria-selected="true"] {
-  color: var(--accent-strong);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 8px 18px rgba(31, 31, 35, 0.08);
-}
-
 #searchInput {
   width: 118px;
   min-height: 40px;
@@ -421,6 +431,7 @@ h3 {
 }
 
 .grocery-list {
+  direction: rtl;
   border-top: 1px solid rgba(60, 60, 67, 0.08);
 }
 
@@ -446,7 +457,7 @@ h3 {
   width: 92px;
   color: var(--accent-strong);
   background: rgba(241, 238, 255, 0.86);
-  content: "הסר";
+  content: "Remove";
   font-size: 14px;
   font-weight: 820;
   opacity: 0;
@@ -519,6 +530,7 @@ h3 {
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
+  direction: ltr;
 }
 
 .row-buy-button {
@@ -552,7 +564,7 @@ h3 {
 .row-content:focus-visible,
 .row-buy-button:focus-visible,
 .row-edit-button:focus-visible,
-.list-tabs button:focus-visible {
+.app-tabs button:focus-visible {
   outline: 3px solid rgba(143, 122, 216, 0.32);
   outline-offset: 2px;
 }
@@ -597,6 +609,8 @@ h3 {
 .modal-card textarea {
   min-height: 44px;
   padding-inline: 12px;
+  direction: rtl;
+  text-align: right;
   color: var(--text);
   background: rgba(255, 255, 255, 0.76);
   border: 1px solid rgba(60, 60, 67, 0.12);
@@ -610,6 +624,7 @@ h3 {
   padding-block: 12px;
   resize: none;
   direction: rtl;
+  text-align: right;
   line-height: 1.55;
 }
 

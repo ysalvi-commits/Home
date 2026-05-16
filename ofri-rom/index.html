@@ -1,129 +1,131 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="Cache-Control" content="no-store" />
     <meta name="theme-color" content="#f1eeff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="קניות - עפרי ורום" />
+    <meta name="apple-mobile-web-app-title" content="Groceries - Ofri & Rom" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>קניות לבית - עפרי ורום</title>
+    <title>Home Groceries - Ofri & Rom</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=to-buy-tab-1" />
+    <link rel="stylesheet" href="./styles.css?v=friendly-tabs-1" />
   </head>
   <body>
     <main class="app-shell">
       <header class="app-header">
         <div>
-          <p class="eyebrow">עפרי ורום</p>
-          <h1>קניות לבית</h1>
+          <p class="eyebrow">Ofri & Rom</p>
+          <h1>Home Groceries</h1>
         </div>
-        <div class="save-pill" id="saveStatus">נשמר במכשיר</div>
+        <div class="save-pill" id="saveStatus">Saved on this device</div>
       </header>
 
-      <section class="needed-card" aria-labelledby="neededTitle">
+      <nav class="app-tabs" role="tablist" aria-label="Main views">
+        <button id="allItemsTab" type="button" role="tab" aria-selected="true">Groceries</button>
+        <button id="toBuyTab" type="button" role="tab" aria-selected="false">To Buy</button>
+      </nav>
+
+      <section id="toBuyPanel" class="needed-card view-panel" aria-labelledby="neededTitle" hidden>
         <div class="card-heading">
           <div>
-            <h2 id="neededTitle">לקנות עכשיו</h2>
-            <p id="neededSummary">אין כרגע מוצרים שסומנו כחסרים.</p>
+            <h2 id="neededTitle">To Buy</h2>
+            <p id="neededSummary">No missing products yet.</p>
           </div>
           <strong id="neededCount">0</strong>
         </div>
         <div id="neededList" class="needed-list" aria-live="polite"></div>
         <div class="quick-actions">
-          <button id="shoppingListButton" class="secondary-button list-button" type="button">רשימת קניות</button>
-          <label class="secondary-button scan-button" for="receiptCamera">סריקת קבלה</label>
-          <label class="secondary-button upload-button" for="receiptFile">העלאת קבלה</label>
-          <button id="clearButton" class="secondary-button" type="button">סיימנו קנייה</button>
+          <button id="shoppingListButton" class="secondary-button list-button" type="button">Shopping list</button>
+          <button id="clearButton" class="secondary-button" type="button">Done shopping</button>
         </div>
       </section>
 
-      <form id="addForm" class="add-form">
-        <input id="newItemInput" type="text" autocomplete="off" placeholder="להוסיף מוצר לרשימה" />
-        <button type="submit">הוסף</button>
-      </form>
+      <div id="groceriesPanel" class="view-panel">
+        <form id="addForm" class="add-form">
+          <input id="newItemInput" type="text" autocomplete="off" placeholder="Add product in Hebrew" dir="rtl" />
+          <button type="submit">Add</button>
+        </form>
 
-      <details class="receipt-card">
-        <summary>
-          <span>ללמוד מקבלה</span>
-          <small id="learnSummary">הסוכן זוכר מוצרים שקניתם.</small>
-        </summary>
-        <div class="receipt-body">
-          <textarea id="receiptInput" rows="5" placeholder="מדביקים כאן טקסט מקבלה או מאישור הזמנה"></textarea>
-          <div class="receipt-actions">
-            <label class="secondary-button file-button" for="receiptFile">
-              העלאת PDF/טקסט
-            </label>
-            <button id="learnReceiptButton" type="button">למד מהקבלה</button>
+        <details class="receipt-card">
+          <summary>
+            <span>Learn from receipt</span>
+            <small id="learnSummary">The app remembers what you buy.</small>
+          </summary>
+          <div class="receipt-body">
+            <textarea id="receiptInput" rows="5" placeholder="Paste receipt or online order text here" dir="rtl"></textarea>
+            <div class="receipt-actions">
+              <label class="secondary-button file-button" for="receiptFile">
+                Upload PDF/text
+              </label>
+              <label class="secondary-button scan-button" for="receiptCamera">Scan receipt</label>
+              <button id="learnReceiptButton" type="button">Learn receipt</button>
+            </div>
           </div>
-        </div>
-      </details>
+        </details>
 
-      <section class="list-section" aria-labelledby="allItemsTitle">
-        <div class="list-heading">
-          <div>
-            <h2 id="allItemsTitle">מה בדרך כלל קונים</h2>
-            <p>מסמנים רק מה שחסר.</p>
+        <section class="list-section" aria-labelledby="allItemsTitle">
+          <div class="list-heading">
+            <div>
+              <h2 id="allItemsTitle">Groceries</h2>
+              <p>Tap To Buy when something is missing.</p>
+            </div>
+            <input id="searchInput" type="search" autocomplete="off" placeholder="Search" aria-label="Search products" dir="rtl" />
           </div>
-          <input id="searchInput" type="search" autocomplete="off" placeholder="חיפוש" aria-label="חיפוש מוצר" />
-        </div>
-        <div class="list-tabs" role="tablist" aria-label="תצוגת רשימה">
-          <button id="allItemsTab" type="button" role="tab" aria-selected="true">כל המוצרים</button>
-          <button id="toBuyTab" type="button" role="tab" aria-selected="false">לקנייה</button>
-        </div>
-        <div id="groceryList" class="grocery-list"></div>
-      </section>
+          <div id="groceryList" class="grocery-list"></div>
+        </section>
+      </div>
     </main>
 
     <input id="receiptFile" class="receipt-file-input" type="file" accept=".pdf,application/pdf,.txt,.csv,.json,text/*" />
     <input id="receiptCamera" class="receipt-file-input" type="file" accept="image/*" capture="environment" />
     <div id="editDialog" class="modal-backdrop" hidden>
       <form id="editForm" class="modal-card">
-        <h2>עריכת מוצר</h2>
+        <h2>Edit Product</h2>
         <label>
-          שם מוצר
-          <input id="editNameInput" type="text" autocomplete="off" required />
+          Product name
+          <input id="editNameInput" type="text" autocomplete="off" required dir="rtl" />
         </label>
         <label>
-          קטגוריה
-          <input id="editCategoryInput" type="text" autocomplete="off" list="categoryOptions" />
+          Category
+          <input id="editCategoryInput" type="text" autocomplete="off" list="categoryOptions" dir="rtl" />
           <datalist id="categoryOptions"></datalist>
         </label>
         <label>
-          מותג / גודל
-          <input id="editNoteInput" type="text" autocomplete="off" />
+          Brand / size
+          <input id="editNoteInput" type="text" autocomplete="off" dir="rtl" />
         </label>
         <div class="modal-actions">
-          <button id="cancelEditButton" class="secondary-button" type="button">בטל</button>
-          <button type="submit">שמור</button>
+          <button id="cancelEditButton" class="secondary-button" type="button">Cancel</button>
+          <button type="submit">Save</button>
         </div>
       </form>
     </div>
     <div id="deleteDialog" class="modal-backdrop" hidden>
       <div class="modal-card">
-        <h2>להסיר מוצר?</h2>
-        <p id="deleteMessage">המוצר יוסר מהרשימה.</p>
+        <h2>Remove product?</h2>
+        <p id="deleteMessage">This product will be removed from Groceries.</p>
         <div class="modal-actions">
-          <button id="cancelDeleteButton" class="secondary-button" type="button">בטל</button>
-          <button id="confirmDeleteButton" class="danger-button" type="button">הסר</button>
+          <button id="cancelDeleteButton" class="secondary-button" type="button">Cancel</button>
+          <button id="confirmDeleteButton" class="danger-button" type="button">Remove</button>
         </div>
       </div>
     </div>
     <div id="shoppingListDialog" class="modal-backdrop" hidden>
       <div class="modal-card">
-        <h2>רשימת קניות</h2>
-        <textarea id="shoppingListText" class="shopping-list-output" rows="9" readonly></textarea>
+        <h2>Shopping List</h2>
+        <textarea id="shoppingListText" class="shopping-list-output" rows="9" readonly dir="rtl"></textarea>
         <div class="modal-actions is-three">
-          <button id="closeShoppingListButton" class="secondary-button" type="button">סגור</button>
-          <button id="copyShoppingListButton" type="button">העתק</button>
-          <button id="shareShoppingListButton" type="button">שתף</button>
+          <button id="closeShoppingListButton" class="secondary-button" type="button">Close</button>
+          <button id="copyShoppingListButton" type="button">Copy</button>
+          <button id="shareShoppingListButton" type="button">Share</button>
         </div>
       </div>
     </div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=to-buy-tab-1" type="module"></script>
+    <script src="./app.js?v=friendly-tabs-1" type="module"></script>
   </body>
 </html>

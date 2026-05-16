@@ -76,6 +76,8 @@ const elements = {
   neededSummary: document.querySelector("#neededSummary"),
   neededList: document.querySelector("#neededList"),
   groceryList: document.querySelector("#groceryList"),
+  groceriesPanel: document.querySelector("#groceriesPanel"),
+  toBuyPanel: document.querySelector("#toBuyPanel"),
   allItemsTab: document.querySelector("#allItemsTab"),
   toBuyTab: document.querySelector("#toBuyTab"),
   searchInput: document.querySelector("#searchInput"),
@@ -262,7 +264,7 @@ function bindEvents() {
     state.items.forEach((entry) => {
       entry.needed = false;
     });
-    saveState("הרשימה נוקתה");
+    saveState("Shopping list cleared");
     render();
   });
 
@@ -293,11 +295,11 @@ function renderNeeded() {
   const needed = state.items.filter((entry) => entry.needed);
   elements.neededCount.textContent = String(needed.length);
   elements.neededSummary.textContent = needed.length
-    ? `${needed.length} מוצרים מחכים ברשימת הקניות.`
-    : "אין כרגע מוצרים שסומנו כחסרים.";
+    ? `${needed.length} item${needed.length === 1 ? "" : "s"} ready to buy.`
+    : "No missing products yet.";
 
   if (!needed.length) {
-    elements.neededList.innerHTML = '<div class="empty-needed">מסמנים חסר מהרשימה למטה.</div>';
+    elements.neededList.innerHTML = '<div class="empty-needed">Mark items from Groceries to add them here.</div>';
     return;
   }
 
@@ -309,7 +311,7 @@ function renderNeeded() {
             <strong>${escapeHtml(entry.name)}</strong>
             ${entry.note ? `<small>${escapeHtml(entry.note)}</small>` : ""}
           </span>
-          <button type="button" data-id="${escapeHtml(entry.id)}">נקנה</button>
+          <button type="button" data-id="${escapeHtml(entry.id)}">Bought</button>
         </div>
       `
     )
@@ -318,17 +320,13 @@ function renderNeeded() {
 
 function renderList() {
   const query = state.search.trim().toLowerCase();
-  const source = uiState.activeTab === "toBuy" ? state.items.filter((entry) => entry.needed) : state.items;
-  const filtered = source.filter((entry) => {
+  const filtered = state.items.filter((entry) => {
     const haystack = `${entry.name} ${entry.category} ${entry.note}`.toLowerCase();
     return !query || haystack.includes(query);
   });
 
   if (!filtered.length) {
-    elements.groceryList.innerHTML =
-      uiState.activeTab === "toBuy"
-        ? '<div class="empty-list">אין כרגע מוצרים בלשונית לקנייה.</div>'
-        : '<div class="empty-list">לא מצאתי מוצר כזה.</div>';
+    elements.groceryList.innerHTML = '<div class="empty-list">No matching product.</div>';
     return;
   }
 
@@ -343,8 +341,8 @@ function renderList() {
         .map((entry) => {
           const meta = [
             entry.note,
-            entry.purchaseCount ? `נקנה ${entry.purchaseCount} פעמים` : "",
-            entry.lastBoughtAt ? `עודכן ${formatDate(entry.lastBoughtAt)}` : ""
+            entry.purchaseCount ? `Bought ${entry.purchaseCount} time${entry.purchaseCount === 1 ? "" : "s"}` : "",
+            entry.lastBoughtAt ? `Updated ${formatDate(entry.lastBoughtAt)}` : ""
           ]
             .filter(Boolean)
             .join(" · ");
@@ -359,8 +357,8 @@ function renderList() {
                   </span>
                 </button>
                 <div class="row-actions">
-                  <button class="row-buy-button ${entry.needed ? "is-selected" : ""}" type="button" data-action="${uiState.activeTab === "toBuy" ? "mark-bought" : "add-to-buy"}" data-id="${escapeHtml(entry.id)}">${uiState.activeTab === "toBuy" ? "נקנה" : entry.needed ? "ברשימה" : "לקנייה"}</button>
-                  <button class="row-edit-button" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" aria-label="עריכת ${escapeHtml(entry.name)}">ערוך</button>
+                  <button class="row-buy-button ${entry.needed ? "is-selected" : ""}" type="button" data-action="add-to-buy" data-id="${escapeHtml(entry.id)}">${entry.needed ? "Added" : "To Buy"}</button>
+                  <button class="row-edit-button" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" aria-label="Edit ${escapeHtml(entry.name)}">Edit</button>
                 </div>
               </div>
             </div>
@@ -382,12 +380,15 @@ function renderTabs() {
   const neededCount = state.items.filter((entry) => entry.needed).length;
   elements.allItemsTab.setAttribute("aria-selected", String(uiState.activeTab === "all"));
   elements.toBuyTab.setAttribute("aria-selected", String(uiState.activeTab === "toBuy"));
-  elements.toBuyTab.textContent = neededCount ? `לקנייה ${neededCount}` : "לקנייה";
+  elements.toBuyTab.textContent = neededCount ? `To Buy ${neededCount}` : "To Buy";
+  elements.groceriesPanel.hidden = uiState.activeTab !== "all";
+  elements.toBuyPanel.hidden = uiState.activeTab !== "toBuy";
 }
 
 function setActiveTab(tab) {
   uiState.activeTab = tab;
   renderTabs();
+  renderNeeded();
   renderList();
 }
 
@@ -395,7 +396,7 @@ function addToBuy(id) {
   const entry = findItem(id);
   if (!entry) return;
   if (entry.needed) {
-    toast("כבר נמצא בלשונית לקנייה.");
+    toast("Already in To Buy.");
     return;
   }
   setNeeded(id, true);
@@ -405,7 +406,7 @@ function setNeeded(id, needed) {
   const entry = findItem(id);
   if (!entry) return;
   entry.needed = needed;
-  saveState(needed ? "סומן כחסר" : "סומן כנקנה");
+  saveState(needed ? "Added to To Buy" : "Marked bought");
   render();
 }
 
@@ -417,7 +418,7 @@ function addItem(name) {
   const existing = state.items.find((entry) => entry.name.toLowerCase() === name.toLowerCase());
   if (existing) {
     existing.needed = true;
-    saveState("סומן כחסר");
+    saveState("Added to To Buy");
     elements.newItemInput.value = "";
     render();
     return;
@@ -425,7 +426,7 @@ function addItem(name) {
 
   state.items.unshift(item(name, guessCategory(name), true));
   elements.newItemInput.value = "";
-  saveState("נוסף לרשימה");
+  saveState("Added to Groceries");
   render();
 }
 
@@ -457,7 +458,7 @@ function saveEditedItem(event) {
   const category = elements.editCategoryInput.value.trim() || guessCategory(name);
   const note = elements.editNoteInput.value.trim();
   if (!name) {
-    toast("צריך שם מוצר.");
+    toast("Product name is required.");
     return;
   }
 
@@ -465,14 +466,14 @@ function saveEditedItem(event) {
     (candidate) => candidate.id !== entry.id && simplify(candidate.name) === simplify(name)
   );
   if (duplicate) {
-    toast("כבר יש מוצר בשם הזה.");
+    toast("A product with this name already exists.");
     return;
   }
 
   entry.name = name;
   entry.category = category;
   entry.note = note;
-  saveState("המוצר עודכן");
+  saveState("Product updated");
   closeEditDialog();
   render();
 }
@@ -558,7 +559,7 @@ function openDeleteDialog(id) {
   const entry = findItem(id);
   if (!entry) return;
   uiState.pendingDeleteId = id;
-  elements.deleteMessage.textContent = `להסיר את ${entry.name} מהרשימה?`;
+  elements.deleteMessage.textContent = `Remove ${entry.name} from Groceries?`;
   elements.deleteDialog.hidden = false;
 }
 
@@ -571,7 +572,7 @@ function confirmDeleteItem() {
   const entry = findItem(uiState.pendingDeleteId);
   if (!entry) return closeDeleteDialog();
   state.items = state.items.filter((candidate) => candidate.id !== entry.id);
-  saveState("המוצר הוסר");
+  saveState("Product removed");
   closeDeleteDialog();
   render();
 }
@@ -579,7 +580,7 @@ function confirmDeleteItem() {
 function openShoppingListDialog() {
   const text = buildShoppingListText();
   if (!text) {
-    toast("אין כרגע מוצרים חסרים.");
+    toast("No items in To Buy yet.");
     return;
   }
 
@@ -605,9 +606,9 @@ async function copyShoppingList() {
       elements.shoppingListText.select();
       document.execCommand("copy");
     }
-    toast("רשימת הקניות הועתקה");
+    toast("Shopping list copied");
   } catch {
-    toast("לא הצלחתי להעתיק. אפשר לסמן ולהעתיק ידנית.");
+    toast("Could not copy. You can select and copy manually.");
   }
 }
 
@@ -621,7 +622,7 @@ async function shareShoppingList() {
   }
 
   try {
-    await navigator.share({ title: "רשימת קניות", text });
+    await navigator.share({ title: "Shopping list", text });
   } catch {
     // User cancelled the share sheet.
   }
@@ -634,7 +635,7 @@ function buildShoppingListText() {
 
   if (!needed.length) return "";
 
-  const lines = ["רשימת קניות:"];
+  const lines = ["Shopping list:"];
   needed.forEach((entry) => {
     lines.push(`- ${entry.name}${entry.note ? ` (${entry.note})` : ""}`);
   });
@@ -650,11 +651,11 @@ function closeModalOnBackdrop(event) {
 function learnFromReceipt() {
   const text = elements.receiptInput.value.trim();
   if (!text) {
-    toast("מדביקים קודם טקסט של קבלה.");
+    toast("Paste receipt text first.");
     return;
   }
 
-  if (learnFromReceiptText(text, "לא מצאתי מוצרים בקבלה.")) elements.receiptInput.value = "";
+  if (learnFromReceiptText(text, "No products found in the receipt.")) elements.receiptInput.value = "";
 }
 
 async function readReceiptFile(event) {
@@ -662,17 +663,17 @@ async function readReceiptFile(event) {
   if (!file) return;
 
   if (!isSupportedReceiptFile(file)) {
-    toast("אפשר להעלות PDF, טקסט, CSV או JSON.");
+    toast("Upload a PDF, text, CSV, or JSON file.");
     event.target.value = "";
     return;
   }
 
   try {
-    toast(isPdfFile(file) ? "קורא PDF..." : "קורא קבלה...");
+    toast(isPdfFile(file) ? "Reading PDF..." : "Reading receipt...");
     const text = await readReceiptText(file);
-    learnFromReceiptText(text, "לא מצאתי מוצרים בקובץ.");
+    learnFromReceiptText(text, "No products found in this file.");
   } catch {
-    toast(isPdfFile(file) ? "לא הצלחתי לקרוא את ה-PDF. נסה PDF עם טקסט." : "לא הצלחתי לקרוא את הקובץ.");
+    toast(isPdfFile(file) ? "Could not read this PDF. Try a text-based PDF." : "Could not read this file.");
   } finally {
     event.target.value = "";
   }
@@ -683,19 +684,19 @@ async function scanReceiptImage(event) {
   if (!file) return;
 
   if (!file.type.startsWith("image/")) {
-    toast("צריך לצלם או לבחור תמונה של קבלה.");
+    toast("Take or choose a receipt photo first.");
     event.target.value = "";
     return;
   }
 
   try {
-    elements.saveStatus.textContent = "סורק קבלה...";
-    toast("סורק קבלה מהמצלמה...");
+    elements.saveStatus.textContent = "Scanning receipt...";
+    toast("Scanning receipt photo...");
     const text = await readImageText(file);
-    learnFromReceiptText(text, "לא הצלחתי לזהות מוצרים בתמונה.");
+    learnFromReceiptText(text, "Could not find products in the photo.");
   } catch {
-    toast("לא הצלחתי לסרוק את התמונה. נסה לצלם קרוב וברור יותר.");
-    elements.saveStatus.textContent = "נשמר במכשיר";
+    toast("Could not scan the photo. Try a closer, clearer picture.");
+    elements.saveStatus.textContent = "Saved on this device";
   } finally {
     event.target.value = "";
   }
@@ -709,8 +710,8 @@ function learnFromReceiptText(text, emptyMessage) {
   }
 
   const result = rememberPurchasedItems(names);
-  elements.learnSummary.textContent = `נלמדו ${result.learned} מוצרים, ${result.added} חדשים.`;
-  saveState(`למדתי ${result.learned} מוצרים`);
+  elements.learnSummary.textContent = `Learned ${result.learned} product${result.learned === 1 ? "" : "s"}, ${result.added} new.`;
+  saveState(`Learned ${result.learned} product${result.learned === 1 ? "" : "s"}`);
   render();
   return true;
 }
@@ -734,7 +735,7 @@ async function readImageText(file) {
   const result = await Tesseract.recognize(file, "heb+eng", {
     logger: (message) => {
       if (message.status === "recognizing text" && Number.isFinite(message.progress)) {
-        elements.saveStatus.textContent = `סורק ${Math.round(message.progress * 100)}%`;
+        elements.saveStatus.textContent = `Scanning ${Math.round(message.progress * 100)}%`;
       }
     }
   });
@@ -934,9 +935,9 @@ function readSharedState() {
 function saveState(message) {
   state.updatedAt = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  elements.saveStatus.textContent = message || "נשמר במכשיר";
+  elements.saveStatus.textContent = message || "Saved on this device";
   window.setTimeout(() => {
-    elements.saveStatus.textContent = "נשמר במכשיר";
+    elements.saveStatus.textContent = "Saved on this device";
   }, 1200);
 }
 
@@ -993,6 +994,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=to-buy-tab-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=friendly-tabs-1").catch(() => undefined);
   });
 }

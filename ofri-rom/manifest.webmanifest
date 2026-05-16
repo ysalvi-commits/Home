@@ -1,8 +1,8 @@
 {
-  "name": "קניות לבית - עפרי ורום",
-  "short_name": "קניות",
-  "description": "סוכן קניות פשוט לבית של עפרי ורום.",
-  "start_url": "./index.html?v=to-buy-tab-1",
+  "name": "Home Groceries - Ofri & Rom",
+  "short_name": "Groceries",
+  "description": "A simple smart grocery helper for Ofri and Rom.",
+  "start_url": "./index.html?v=friendly-tabs-1",
   "display": "standalone",
   "background_color": "#f7f7f8",
   "theme_color": "#f1eeff",

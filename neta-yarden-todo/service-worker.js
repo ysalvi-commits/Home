@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "neta-yarden-todo-";
-const CACHE_NAME = `${CACHE_PREFIX}v8`;
+const CACHE_NAME = `${CACHE_PREFIX}v10`;
 const ASSETS = [
   "./",
   "./index.html",

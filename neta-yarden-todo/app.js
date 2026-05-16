@@ -5,11 +5,13 @@ const APP_LINK = "https://ysalvi-commits.github.io/Home/neta-yarden-todo/";
 const RECIPIENTS = ["yardensalvi@gmail.com", "barakneta1@gmail.com"];
 const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
 const SHARE_HASH_PREFIX = "#tasks=";
+const PULL_REFRESH_THRESHOLD = 82;
 
 const uiState = {
   activeTab: "open",
   editingTaskId: "",
-  swipe: null
+  swipe: null,
+  refresh: null
 };
 
 const state = loadState();
@@ -20,11 +22,13 @@ const elements = {
   taskList: document.querySelector("#taskList"),
   taskListTitle: document.querySelector("#taskListTitle"),
   taskCount: document.querySelector("#taskCount"),
+  newTaskBadge: document.querySelector("#newTaskBadge"),
   summaryText: document.querySelector("#summaryText"),
   sendEmailToggle: document.querySelector("#sendEmailToggle"),
   openTab: document.querySelector("#openTab"),
   doneTab: document.querySelector("#doneTab"),
   shareButton: document.querySelector("#shareButton"),
+  pullRefresh: document.querySelector("#pullRefresh"),
   settingsButton: document.querySelector("#settingsButton"),
   settingsPanel: document.querySelector("#settingsPanel"),
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
@@ -54,6 +58,10 @@ function bindEvents() {
   window.addEventListener("pointermove", moveSwipe);
   window.addEventListener("pointerup", endSwipe);
   window.addEventListener("pointercancel", cancelSwipe);
+  window.addEventListener("pointerdown", startPullRefresh);
+  window.addEventListener("pointermove", movePullRefresh, { passive: false });
+  window.addEventListener("pointerup", endPullRefresh);
+  window.addEventListener("pointercancel", cancelPullRefresh);
 
   elements.taskList.addEventListener("click", (event) => {
     if (uiState.swipe?.completed) {
@@ -363,6 +371,78 @@ function closeSettings() {
   }, 180);
 }
 
+function startPullRefresh(event) {
+  if (window.scrollY > 2 || event.clientY > 180) return;
+  if (closestElement(event.target, "button, input, textarea, .swipe-task, .settings-panel")) return;
+
+  uiState.refresh = {
+    startY: event.clientY,
+    active: false,
+    ready: false,
+    refreshing: false
+  };
+}
+
+function movePullRefresh(event) {
+  const refresh = uiState.refresh;
+  if (!refresh || refresh.refreshing) return;
+
+  const deltaY = event.clientY - refresh.startY;
+  if (deltaY <= 0) {
+    cancelPullRefresh();
+    return;
+  }
+
+  if (deltaY < 10) return;
+  refresh.active = true;
+  refresh.ready = deltaY >= PULL_REFRESH_THRESHOLD;
+  const distance = Math.min(112, Math.round(deltaY * 0.68));
+  elements.pullRefresh.style.setProperty("--pull-distance", `${distance}px`);
+  elements.pullRefresh.textContent = refresh.ready ? "Release to refresh" : "Pull to refresh";
+  elements.pullRefresh.classList.toggle("is-active", true);
+  elements.pullRefresh.classList.toggle("is-ready", refresh.ready);
+  event.preventDefault();
+}
+
+function endPullRefresh() {
+  const refresh = uiState.refresh;
+  if (!refresh) return;
+
+  if (refresh.active && refresh.ready) {
+    refresh.refreshing = true;
+    refreshApp();
+    return;
+  }
+
+  resetPullRefresh();
+}
+
+function cancelPullRefresh() {
+  if (uiState.refresh?.refreshing) return;
+  resetPullRefresh();
+}
+
+function resetPullRefresh() {
+  uiState.refresh = null;
+  elements.pullRefresh.classList.remove("is-active", "is-ready", "is-loading");
+  elements.pullRefresh.style.setProperty("--pull-distance", "0px");
+  elements.pullRefresh.textContent = "Pull to refresh";
+}
+
+function refreshApp() {
+  elements.pullRefresh.textContent = "Refreshing";
+  elements.pullRefresh.classList.add("is-active", "is-loading");
+  elements.pullRefresh.style.setProperty("--pull-distance", "74px");
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.getRegistration().then((registration) => registration?.update()).catch(() => undefined);
+  }
+
+  window.setTimeout(() => {
+    window.location.reload();
+  }, 260);
+}
+
 function render() {
   renderSummary();
   renderTabs();
@@ -373,11 +453,14 @@ function renderSummary() {
   const count = state.tasks.length;
   const wins = state.completedTasks.length;
   elements.taskCount.textContent = String(count);
+  elements.newTaskBadge.textContent = count > 99 ? "99+" : String(count);
+  elements.newTaskBadge.hidden = count === 0;
   elements.summaryText.textContent = count
     ? `${count} open · ${wins} wins`
     : wins
       ? `No open tasks · ${wins} wins`
       : "No open tasks right now.";
+  updateAppIconBadge(count);
 }
 
 function renderTabs() {
@@ -425,8 +508,9 @@ function renderTask(task) {
       <div class="task-content">
         ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
         <div class="swipe-cue" aria-hidden="true">
+          <span class="swipe-arrows">← ← ←</span>
           <span>Swipe me to done</span>
-          <strong>→</strong>
+          <span class="swipe-arrows">→ → →</span>
         </div>
       </div>
     </article>
@@ -694,6 +778,17 @@ function readJson(value) {
 function readEmailPreference() {
   const saved = localStorage.getItem(EMAIL_PREF_KEY);
   return saved === null ? true : saved === "true";
+}
+
+function updateAppIconBadge(count) {
+  if (count > 0 && "setAppBadge" in navigator) {
+    navigator.setAppBadge(count).catch(() => undefined);
+    return;
+  }
+
+  if (count === 0 && "clearAppBadge" in navigator) {
+    navigator.clearAppBadge().catch(() => undefined);
+  }
 }
 
 function closestElement(target, selector) {

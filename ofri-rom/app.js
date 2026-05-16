@@ -15,7 +15,7 @@ const defaultItems = [
   item("אורז", "מזווה", false, "סוגת פרסי · 1 ק״ג"),
   item("פתיתים", "מזווה", false, "אסם אפויים · 500 גרם"),
   item("שקדי מרק", "מזווה", false, "אסם · 400 גרם"),
-  item("חמאת בוטנים", "מזווה", false, "בטר & דיפרנט טבעית · 1 ק״ג"),
+  item("חמאת בוטנים טבעית בטר & דיפרנט", "מזווה", false, "1 ק״ג"),
   item("עדשים שחורות", "מזווה", false, "סוגת · 500 גרם"),
   item("תרכיז עגבניות", "מזווה", false, "פריניר · 260 גרם"),
   item("קינמון", "מזווה", false, "תבליני מימון טחון · 80 גרם"),
@@ -34,6 +34,15 @@ const defaultItems = [
   item("משחת שיניים", "פארם", false, "קולגייט טוטאל · 75 מ״ל"),
   item("דאודורנט", "פארם", false, "ג׳ילט Cool Wave · 70 מ״ל"),
   item("ג׳ל רחצה", "פארם", false, "פלמוליב מינרל · 750 מ״ל")
+];
+
+const exactProductCorrections = [
+  {
+    aliases: ["חמאת בוטנים", "חמאת בוטנים טבעית בטר & דיפרנט"],
+    name: "חמאת בוטנים טבעית בטר & דיפרנט",
+    category: "מזווה",
+    note: "1 ק״ג"
+  }
 ];
 
 const state = loadState();
@@ -98,10 +107,26 @@ function loadState() {
 
 function withDefaultDetails(snapshot) {
   const detailByName = new Map(defaultItems.map((entry) => [simplify(entry.name), entry]));
+  const exactByAlias = new Map();
+  exactProductCorrections.forEach((correction) => {
+    correction.aliases.forEach((alias) => {
+      exactByAlias.set(simplify(alias), correction);
+    });
+  });
 
   return {
     ...snapshot,
     items: snapshot.items.map((entry) => {
+      const exactCorrection = exactByAlias.get(simplify(entry.name));
+      if (exactCorrection) {
+        return {
+          ...entry,
+          name: exactCorrection.name,
+          category: entry.category || exactCorrection.category,
+          note: exactCorrection.note
+        };
+      }
+
       const defaultEntry = detailByName.get(simplify(entry.name));
       if (!defaultEntry) return entry;
       return {
@@ -441,10 +466,11 @@ function rememberPurchasedItems(products) {
     const note = typeof product === "string" ? "" : product.note;
     const match = findSimilarItem(name);
     if (match) {
+      match.name = name;
       match.purchaseCount += 1;
       match.lastBoughtAt = today;
       match.needed = false;
-      if (note && !match.note) match.note = note;
+      if (note) match.note = note;
       learned += 1;
       return;
     }
@@ -635,6 +661,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=product-details-2").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=product-details-3").catch(() => undefined);
   });
 }

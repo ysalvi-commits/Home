@@ -400,14 +400,30 @@ h3 {
   overflow: hidden;
 }
 
+.swipe-row::after {
+  position: absolute;
+  inset: 0 0 0 auto;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  width: 92px;
+  color: var(--accent-strong);
+  background: rgba(241, 238, 255, 0.86);
+  content: "הסר";
+  font-size: 14px;
+  font-weight: 820;
+}
+
 .grocery-row {
   position: relative;
+  z-index: 1;
   min-height: 62px;
   gap: 12px;
   padding: 10px 12px 10px 16px;
   background: rgba(255, 255, 255, 0.48);
   border-top: 1px solid rgba(60, 60, 67, 0.075);
-  transition: background 180ms ease;
+  transition: transform 180ms ease, background 180ms ease;
+  will-change: transform;
 }
 
 .grocery-row:first-of-type {
@@ -416,6 +432,10 @@ h3 {
 
 .grocery-row.is-needed {
   background: rgba(241, 238, 255, 0.72);
+}
+
+.grocery-row.is-swiping {
+  transition: none;
 }
 
 .row-main {

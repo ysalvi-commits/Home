@@ -179,12 +179,27 @@ h3 {
   border-radius: 14px;
 }
 
-.needed-item span {
+.needed-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.needed-copy strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 16px;
   font-weight: 760;
+}
+
+.needed-copy small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .needed-item button,

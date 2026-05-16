@@ -8,32 +8,32 @@ let pdfJsPromise = null;
 let tesseractPromise = null;
 
 const defaultItems = [
-  item("חלב", "מקרר"),
-  item("ביצים", "מקרר"),
-  item("חמאה", "מקרר"),
-  item("קפה", "מזווה"),
-  item("אורז", "מזווה"),
-  item("פתיתים", "מזווה"),
-  item("שקדי מרק", "מזווה"),
-  item("חמאת בוטנים", "מזווה"),
-  item("עדשים שחורות", "מזווה"),
-  item("תרכיז עגבניות", "מזווה"),
-  item("קינמון", "מזווה"),
-  item("פתי בר", "חטיפים"),
-  item("שוקולד מריר", "חטיפים"),
-  item("מסטיק", "חטיפים"),
-  item("אפונה וגזר", "קפואים"),
-  item("ירקות להקפצה", "קפואים"),
-  item("שניצל", "קפואים"),
-  item("עוף טחון", "קפואים"),
-  item("נייר מגבת", "בית"),
-  item("ממחטות אף", "בית"),
-  item("מטליות לרצפה", "בית"),
-  item("חומר ניקוי כללי", "בית"),
-  item("ניקוי אסלה", "בית"),
-  item("משחת שיניים", "פארם"),
-  item("דאודורנט", "פארם"),
-  item("ג׳ל רחצה", "פארם")
+  item("חלב", "מקרר", false, "תנובה 3% · 1 ליטר"),
+  item("ביצים", "מקרר", false, "גודל L · 12 יחידות"),
+  item("חמאה", "מקרר", false, "תנובה · 100 גרם"),
+  item("קפה", "מזווה", false, "עלית נמס · 200 גרם"),
+  item("אורז", "מזווה", false, "סוגת פרסי · 1 ק״ג"),
+  item("פתיתים", "מזווה", false, "אסם אפויים · 500 גרם"),
+  item("שקדי מרק", "מזווה", false, "אסם · 400 גרם"),
+  item("חמאת בוטנים", "מזווה", false, "סקיפי קרמי · 462 גרם"),
+  item("עדשים שחורות", "מזווה", false, "סוגת · 500 גרם"),
+  item("תרכיז עגבניות", "מזווה", false, "פריניר · 260 גרם"),
+  item("קינמון", "מזווה", false, "תבליני מימון טחון · 80 גרם"),
+  item("פתי בר", "חטיפים", false, "אסם · 500 גרם"),
+  item("שוקולד מריר", "חטיפים", false, "עלית 60% · 100 גרם"),
+  item("מסטיק", "חטיפים", false, "MUST ללא סוכר · מארז"),
+  item("אפונה וגזר", "קפואים", false, "סנפרוסט · 800 גרם"),
+  item("ירקות להקפצה", "קפואים", false, "סנפרוסט · 800 גרם"),
+  item("שניצל", "קפואים", false, "מאמא עוף · 700 גרם"),
+  item("עוף טחון", "קפואים", false, "טרי · 500 גרם"),
+  item("נייר מגבת", "בית", false, "סנו סושי · 6 גלילים"),
+  item("ממחטות אף", "בית", false, "קלינקס · 3 קופסאות"),
+  item("מטליות לרצפה", "בית", false, "סנו סושי · 10 יחידות"),
+  item("חומר ניקוי כללי", "בית", false, "סנו רב שימושי · 1 ליטר"),
+  item("ניקוי אסלה", "בית", false, "סנו 00 · 750 מ״ל"),
+  item("משחת שיניים", "פארם", false, "קולגייט טוטאל · 75 מ״ל"),
+  item("דאודורנט", "פארם", false, "ג׳ילט Cool Wave · 70 מ״ל"),
+  item("ג׳ל רחצה", "פארם", false, "פלמוליב מינרל · 750 מ״ל")
 ];
 
 const state = loadState();
@@ -73,27 +73,44 @@ function item(name, category = "כללי", needed = false, note = "") {
 
 function loadState() {
   const fromLink = readSharedState();
-  if (fromLink) return fromLink;
+  if (fromLink) return withDefaultDetails(fromLink);
 
   const saved = readJson(localStorage.getItem(STORAGE_KEY));
-  if (saved?.items?.length) return normalize(saved);
+  if (saved?.items?.length) return withDefaultDetails(normalize(saved));
 
   const legacy = readJson(localStorage.getItem(LEGACY_KEY));
   if (legacy?.items?.length) {
-    return normalize({
+    return withDefaultDetails(normalize({
       items: legacy.items.map((entry) => ({
         id: entry.id || slug(`${entry.category}-${entry.name}`),
         name: entry.name,
         category: entry.category || "כללי",
-      note: [entry.brand, entry.packageSize].filter(Boolean).join(" · "),
-      purchaseCount: Number(entry.usualQty || 0) || 1,
-      lastBoughtAt: entry.lastPurchased || "",
-      needed: Boolean(entry.missing || entry.stockQty <= 0 || entry.stockQty < entry.usualQty)
+        note: [entry.brand, entry.packageSize].filter(Boolean).join(" · "),
+        purchaseCount: Number(entry.usualQty || 0) || 1,
+        lastBoughtAt: entry.lastPurchased || "",
+        needed: Boolean(entry.missing || entry.stockQty <= 0 || entry.stockQty < entry.usualQty)
       }))
-    });
+    }));
   }
 
   return normalize({ items: defaultItems });
+}
+
+function withDefaultDetails(snapshot) {
+  const detailByName = new Map(defaultItems.map((entry) => [simplify(entry.name), entry]));
+
+  return {
+    ...snapshot,
+    items: snapshot.items.map((entry) => {
+      const defaultEntry = detailByName.get(simplify(entry.name));
+      if (!defaultEntry) return entry;
+      return {
+        ...entry,
+        category: entry.category || defaultEntry.category,
+        note: entry.note || defaultEntry.note
+      };
+    })
+  };
 }
 
 function normalize(snapshot) {
@@ -182,7 +199,10 @@ function renderNeeded() {
     .map(
       (entry) => `
         <div class="needed-item">
-          <span>${escapeHtml(entry.name)}</span>
+          <span class="needed-copy">
+            <strong>${escapeHtml(entry.name)}</strong>
+            ${entry.note ? `<small>${escapeHtml(entry.note)}</small>` : ""}
+          </span>
           <button type="button" data-id="${escapeHtml(entry.id)}">נקנה</button>
         </div>
       `
@@ -411,22 +431,25 @@ async function loadPdfJs() {
   return pdfJsPromise;
 }
 
-function rememberPurchasedItems(names) {
+function rememberPurchasedItems(products) {
   let learned = 0;
   let added = 0;
   const today = new Date().toISOString().slice(0, 10);
 
-  names.forEach((name) => {
+  products.forEach((product) => {
+    const name = typeof product === "string" ? product : product.name;
+    const note = typeof product === "string" ? "" : product.note;
     const match = findSimilarItem(name);
     if (match) {
       match.purchaseCount += 1;
       match.lastBoughtAt = today;
       match.needed = false;
+      if (note && !match.note) match.note = note;
       learned += 1;
       return;
     }
 
-    const entry = item(name, guessCategory(name), false);
+    const entry = item(name, guessCategory(name), false, note);
     entry.purchaseCount = 1;
     entry.lastBoughtAt = today;
     state.items.push(entry);
@@ -461,11 +484,11 @@ function extractReceiptItems(text) {
 
   return text
     .split(/\r?\n/)
-    .map(cleanReceiptLine)
-    .filter((line) => line.length >= 3 && /[\u0590-\u05ff]/.test(line))
-    .filter((line) => !blocked.some((word) => simplify(line).includes(simplify(word))))
-    .filter((line) => {
-      const key = simplify(line);
+    .map(parseReceiptLine)
+    .filter((product) => product.name.length >= 3 && /[\u0590-\u05ff]/.test(product.name))
+    .filter((product) => !blocked.some((word) => simplify(product.name).includes(simplify(word))))
+    .filter((product) => {
+      const key = simplify(product.name);
       if (!key || seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -473,12 +496,28 @@ function extractReceiptItems(text) {
     .slice(0, 80);
 }
 
+function parseReceiptLine(line) {
+  return {
+    name: cleanReceiptLine(line),
+    note: extractPackageSize(line)
+  };
+}
+
+function extractPackageSize(line) {
+  const matches = String(line).match(/\d+(?:[.,]\d+)?\s*(יחידות|יח|גרם|קג|ק״ג|קילו|מל|מ״ל|ליטר|%)/gi);
+  if (!matches?.length) return "";
+  return matches
+    .map((match) => match.replace(/\s+/g, " ").trim())
+    .slice(0, 2)
+    .join(" · ");
+}
+
 function cleanReceiptLine(line) {
   return String(line)
     .replace(/[₪$]/g, " ")
     .replace(/\b\d+[.,]\d{1,2}\b/g, " ")
     .replace(/\b\d{4,}\b/g, " ")
-    .replace(/\b\d+\s*(יח|גרם|קג|ק״ג|מל|מ״ל|ליטר|%)\b/g, " ")
+    .replace(/\d+(?:[.,]\d+)?\s*(יחידות|יח|גרם|קג|ק״ג|קילו|מל|מ״ל|ליטר|%)/g, " ")
     .replace(/[*#|:]/g, " ")
     .replace(/\s{2,}/g, " ")
     .trim();
@@ -596,6 +635,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=ofri-rom-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=product-details-1").catch(() => undefined);
   });
 }

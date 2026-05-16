@@ -635,6 +635,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=receipt-scan-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=product-details-1").catch(() => undefined);
   });
 }

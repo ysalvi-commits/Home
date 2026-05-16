@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/app-icon.png" type="image/png" />
     <link rel="apple-touch-icon" href="./assets/app-icon.png" />
-    <link rel="stylesheet" href="./styles.css?v=todo-5" />
+    <link rel="stylesheet" href="./styles.css?v=todo-6" />
   </head>
   <body>
     <main class="app-shell">
@@ -33,6 +33,11 @@
         <strong id="taskCount">0</strong>
       </section>
 
+      <section class="profile-panel" aria-label="השם שלי">
+        <label for="userNameInput">השם שלי</label>
+        <input id="userNameInput" type="text" autocomplete="name" placeholder="מי מסיים משימות?" />
+      </section>
+
       <form id="addForm" class="add-panel" autocomplete="off">
         <div class="add-row">
           <input id="taskInput" type="text" inputmode="text" placeholder="משימה חדשה" aria-label="משימה חדשה" />
@@ -44,6 +49,11 @@
           <span>שליחת מייל</span>
         </label>
       </form>
+
+      <nav class="tabs" aria-label="משימות">
+        <button id="openTab" type="button" class="is-active">פתוחות</button>
+        <button id="doneTab" type="button">ניצחונות</button>
+      </nav>
 
       <section class="task-panel" aria-labelledby="taskListTitle">
         <div class="section-heading">
@@ -59,7 +69,8 @@
       </section>
     </main>
 
+    <div id="snailParty" class="snail-party" aria-hidden="true"></div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=todo-5" type="module"></script>
+    <script src="./app.js?v=todo-6" type="module"></script>
   </body>
 </html>

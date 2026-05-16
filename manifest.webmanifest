@@ -2,7 +2,7 @@
   "name": "קניות לבית",
   "short_name": "קניות",
   "description": "סוכן קניות פשוט לבית.",
-  "start_url": "./index.html?v=product-details-3",
+  "start_url": "./index.html?v=category-rules-1",
   "display": "standalone",
   "background_color": "#f7f7f8",
   "theme_color": "#f1eeff",

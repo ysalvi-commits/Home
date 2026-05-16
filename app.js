@@ -11,14 +11,14 @@ const defaultItems = [
   item("חלב", "מקרר", false, "תנובה 3% · 1 ליטר"),
   item("ביצים", "מקרר", false, "גודל L · 12 יחידות"),
   item("חמאה", "מקרר", false, "תנובה · 100 גרם"),
-  item("קפה", "מזווה", false, "עלית נמס · 200 גרם"),
-  item("אורז", "מזווה", false, "סוגת פרסי · 1 ק״ג"),
-  item("פתיתים", "מזווה", false, "אסם אפויים · 500 גרם"),
-  item("שקדי מרק", "מזווה", false, "אסם · 400 גרם"),
-  item("חמאת בוטנים טבעית בטר & דיפרנט", "מזווה", false, "1 ק״ג"),
-  item("עדשים שחורות", "מזווה", false, "סוגת · 500 גרם"),
-  item("תרכיז עגבניות", "מזווה", false, "פריניר · 260 גרם"),
-  item("קינמון", "מזווה", false, "תבליני מימון טחון · 80 גרם"),
+  item("קפה", "קפה ותה", false, "עלית נמס · 200 גרם"),
+  item("אורז", "דגנים וקטניות", false, "סוגת פרסי · 1 ק״ג"),
+  item("פתיתים", "דגנים וקטניות", false, "אסם אפויים · 500 גרם"),
+  item("שקדי מרק", "דגנים וקטניות", false, "אסם · 400 גרם"),
+  item("חמאת בוטנים טבעית בטר & דיפרנט", "ממרחים", false, "1 ק״ג"),
+  item("עדשים שחורות", "דגנים וקטניות", false, "סוגת · 500 גרם"),
+  item("תרכיז עגבניות", "שימורים ורטבים", false, "פריניר · 260 גרם"),
+  item("קינמון", "תבלינים", false, "תבליני מימון טחון · 80 גרם"),
   item("פתי בר", "חטיפים", false, "אסם · 500 גרם"),
   item("שוקולד מריר", "חטיפים", false, "עלית 60% · 100 גרם"),
   item("מסטיק", "חטיפים", false, "MUST ללא סוכר · מארז"),
@@ -26,11 +26,11 @@ const defaultItems = [
   item("ירקות להקפצה", "קפואים", false, "סנפרוסט · 800 גרם"),
   item("שניצל", "קפואים", false, "מאמא עוף · 700 גרם"),
   item("עוף טחון", "קפואים", false, "טרי · 500 גרם"),
-  item("נייר מגבת", "בית", false, "סנו סושי · 6 גלילים"),
-  item("ממחטות אף", "בית", false, "קלינקס · 3 קופסאות"),
-  item("מטליות לרצפה", "בית", false, "סנו סושי · 10 יחידות"),
-  item("חומר ניקוי כללי", "בית", false, "סנו רב שימושי · 1 ליטר"),
-  item("ניקוי אסלה", "בית", false, "סנו 00 · 750 מ״ל"),
+  item("נייר מגבת", "ניקיון ובית", false, "סנו סושי · 6 גלילים"),
+  item("ממחטות אף", "פארם", false, "קלינקס · 3 קופסאות"),
+  item("מטליות לרצפה", "ניקיון ובית", false, "סנו סושי · 10 יחידות"),
+  item("חומר ניקוי כללי", "ניקיון ובית", false, "סנו רב שימושי · 1 ליטר"),
+  item("ניקוי אסלה", "ניקיון ובית", false, "סנו 00 · 750 מ״ל"),
   item("משחת שיניים", "פארם", false, "קולגייט טוטאל · 75 מ״ל"),
   item("דאודורנט", "פארם", false, "ג׳ילט Cool Wave · 70 מ״ל"),
   item("ג׳ל רחצה", "פארם", false, "פלמוליב מינרל · 750 מ״ל")
@@ -40,9 +40,27 @@ const exactProductCorrections = [
   {
     aliases: ["חמאת בוטנים", "חמאת בוטנים טבעית בטר & דיפרנט"],
     name: "חמאת בוטנים טבעית בטר & דיפרנט",
-    category: "מזווה",
+    category: "ממרחים",
     note: "1 ק״ג"
   }
+];
+
+const categoryRules = [
+  { category: "קפואים", pattern: /קפוא|קפואה|קפואים|סנפרוסט|מאמאעוף|frozen/ },
+  { category: "שימורים ורטבים", pattern: /תרכיז|רסק|רוטב|קטשופ|מיונז|חרדל|טונה|זיתים|חמוצים|שימור|שימורים|canned|sauce|ketchup|mustard|mayo|mayonnaise|tuna/ },
+  { category: "ירקות", pattern: /מלפפון|מלפפונים|cucumber|cucamber|עגבניה|עגבנייה|עגבניות|tomato|גזר|carrot|בצל|onion|תפוחאדמה|potato|חסה|lettuce|פלפל|pepper|קישוא|zucchini|כרוב|cabbage|ברוקולי|broccoli|פטריות|mushroom|בטטה|sweetpotato|שום|garlic|אבוקדו|avocado|סלק|beet/ },
+  { category: "פירות", pattern: /תפוח|apple|בננה|banana|תפוז|orange|לימון|lemon|ענבים|grape|אבטיח|watermelon|מלון|melon|תות|strawberry|אגס|pear|מנגו|mango|אננס|pineapple|אפרסק|peach|שזיף|plum|קיווי|kiwi/ },
+  { category: "מוצרי חלב וביצים", pattern: /חלב|milk|גבינ|cheese|יוגורט|yogurt|ביצ|egg|חמאה|butter|שמנת|cream|קוטג|cottage/ },
+  { category: "בשר ודגים", pattern: /עוף|chicken|בשר|beef|דג|fish|סלמון|salmon|המבורגר|burger|נקניק|sausage|הודו|turkey|כבש|lamb/ },
+  { category: "לחמים ומאפים", pattern: /לחם|bread|פיתה|pita|לחמניה|לחמנייה|bun|חלה|challah|באגט|baguette|קרואסון|croissant|מאפה|pastry|עוגה|cake/ },
+  { category: "שתייה", pattern: /מים|water|סודה|soda|קולה|cola|מיץ|juice|בירה|beer|יין|wine|משקה|drink|חלבסויה|oatmilk|soymilk/ },
+  { category: "קפה ותה", pattern: /קפה|coffee|תה|tea|נסקפה|אספרסו|espresso|קפסול|capsule/ },
+  { category: "ממרחים", pattern: /חמאתבוטנים|peanutbutter|ממרח|spread|ריבה|jam|דבש|honey|שוקולדלמריחה|נוטלה|nutella|טחינה|tahini/ },
+  { category: "תבלינים", pattern: /קינמון|cinnamon|מלח|salt|פלפלשחור|תבלין|spice|פפריקה|paprika|כורכום|turmeric|כמון|cumin|אורגנו|oregano|בזיליקום|basil/ },
+  { category: "דגנים וקטניות", pattern: /אורז|rice|פתיתים|pasta|פסטה|ספגטי|spaghetti|קוסקוס|couscous|קינואה|quinoa|בורגול|bulgur|עדשים|lentil|שעועית|bean|חומוס|chickpea|קמח|flour|שקדיםמרק/ },
+  { category: "חטיפים ומתוקים", pattern: /שוקולד|chocolate|חטיף|snack|עוגי|cookie|מסטיק|gum|פתי|ביסקוויט|biscuit|סוכריה|candy|גלידה|icecream/ },
+  { category: "ניקיון ובית", pattern: /נייר|paper|מטליות|מטלית|ניקוי|clean|אסלה|toilet|סבון|soap|כביסה|laundry|אקונומיקה|bleach|שקיות|bags|רדיד|foil|אשפה|trash|מגבת|towel/ },
+  { category: "פארם", pattern: /משחה|toothpaste|דאודורנט|deodorant|שמפו|shampoo|רחצה|bodywash|ממחטות|tissue|טישו|ויטמין|vitamin|אקמול|תרופה|medicine/ }
 ];
 
 const state = loadState();
@@ -559,11 +577,8 @@ function findSimilarItem(name) {
 
 function guessCategory(name) {
   const value = simplify(name);
-  if (/חלב|גבינ|יוגורט|ביצ|חמאה|שמנת/.test(value)) return "מקרר";
-  if (/שניצל|עוף|בשר|דג|קפוא|אפונה|ירקות/.test(value)) return "קפואים";
-  if (/נייר|מטליות|ניקוי|אסלה|סבון|כביסה|אקונומיקה/.test(value)) return "בית";
-  if (/משחה|דאודורנט|שמפו|רחצה|ממחטות/.test(value)) return "פארם";
-  if (/שוקולד|חטיף|עוגי|מסטיק|פתי/.test(value)) return "חטיפים";
+  const rule = categoryRules.find((candidate) => candidate.pattern.test(value));
+  if (rule) return rule.category;
   return "מזווה";
 }
 
@@ -661,6 +676,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=product-details-3").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=category-rules-1").catch(() => undefined);
   });
 }

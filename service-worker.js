@@ -1,4 +1,4 @@
-const CACHE_NAME = "home-shopping-agent-v2";
+const CACHE_NAME = "home-shopping-agent-v4";
 const ASSETS = [
   "./",
   "./index.html",

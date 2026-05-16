@@ -1,5 +1,9 @@
 const STORAGE_KEY = "simple-grocery-list-he-v1";
 const LEGACY_KEY = "pantry-household-he-v1";
+const PDFJS_MODULE_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs";
+const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs";
+
+let pdfJsPromise = null;
 
 const defaultItems = [
   item("חלב", "מקרר"),
@@ -39,7 +43,6 @@ const elements = {
   searchInput: document.querySelector("#searchInput"),
   addForm: document.querySelector("#addForm"),
   newItemInput: document.querySelector("#newItemInput"),
-  shareButton: document.querySelector("#shareButton"),
   clearButton: document.querySelector("#clearButton"),
   receiptInput: document.querySelector("#receiptInput"),
   receiptFile: document.querySelector("#receiptFile"),
@@ -150,7 +153,6 @@ function bindEvents() {
     render();
   });
 
-  elements.shareButton.addEventListener("click", shareList);
   elements.learnReceiptButton.addEventListener("click", learnFromReceipt);
   elements.receiptFile.addEventListener("change", readReceiptFile);
 }
@@ -281,19 +283,20 @@ function learnFromReceipt() {
   render();
 }
 
-function readReceiptFile(event) {
+async function readReceiptFile(event) {
   const file = event.target.files?.[0];
   if (!file) return;
 
   if (!isSupportedReceiptFile(file)) {
-    toast("כרגע אפשר להעלות קבלת טקסט, CSV או JSON.");
+    toast("אפשר להעלות PDF, טקסט, CSV או JSON.");
     event.target.value = "";
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = () => {
-    const names = extractReceiptItems(String(reader.result || ""));
+  try {
+    toast(isPdfFile(file) ? "קורא PDF..." : "קורא קבלה...");
+    const text = await readReceiptText(file);
+    const names = extractReceiptItems(text);
     if (!names.length) {
       toast("לא מצאתי מוצרים בקובץ.");
       return;
@@ -304,15 +307,49 @@ function readReceiptFile(event) {
     elements.learnSummary.textContent = `נלמדו ${result.learned} מוצרים, ${result.added} חדשים.`;
     saveState(`למדתי ${result.learned} מוצרים`);
     render();
-  };
-  reader.onerror = () => toast("לא הצלחתי לקרוא את הקובץ.");
-  reader.readAsText(file);
-  event.target.value = "";
+  } catch {
+    toast(isPdfFile(file) ? "לא הצלחתי לקרוא את ה-PDF. נסה PDF עם טקסט." : "לא הצלחתי לקרוא את הקובץ.");
+  } finally {
+    event.target.value = "";
+  }
 }
 
 function isSupportedReceiptFile(file) {
   const name = file.name.toLowerCase();
-  return file.type.startsWith("text/") || [".txt", ".csv", ".json"].some((suffix) => name.endsWith(suffix));
+  return isPdfFile(file) || file.type.startsWith("text/") || [".txt", ".csv", ".json"].some((suffix) => name.endsWith(suffix));
+}
+
+function isPdfFile(file) {
+  return file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+}
+
+async function readReceiptText(file) {
+  if (isPdfFile(file)) return readPdfText(file);
+  return file.text();
+}
+
+async function readPdfText(file) {
+  const pdfjsLib = await loadPdfJs();
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const pages = [];
+
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+    const page = await pdf.getPage(pageNumber);
+    const content = await page.getTextContent();
+    pages.push(content.items.map((item) => item.str || "").join(" "));
+  }
+
+  return pages.join("\n");
+}
+
+async function loadPdfJs() {
+  if (!pdfJsPromise) {
+    pdfJsPromise = import(PDFJS_MODULE_URL).then((module) => {
+      module.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+      return module;
+    });
+  }
+  return pdfJsPromise;
 }
 
 function rememberPurchasedItems(names) {
@@ -420,40 +457,6 @@ function formatDate(value) {
   return [day, month, year].filter(Boolean).join(".");
 }
 
-async function shareList() {
-  const needed = state.items.filter((entry) => entry.needed);
-  const lines = needed.length
-    ? ["רשימת קניות", ...needed.map((entry) => `• ${entry.name}`)]
-    : ["רשימת קניות", "אין כרגע מוצרים שסומנו כחסרים."];
-  const text = lines.join("\n");
-  const url = makeShareUrl();
-
-  if (navigator.share) {
-    try {
-      await navigator.share({ title: "קניות לבית", text, url });
-      return;
-    } catch {
-      // המשתמש ביטל את השיתוף.
-      return;
-    }
-  }
-
-  try {
-    await navigator.clipboard.writeText(`${text}\n${url}`);
-    toast("הקישור והרשימה הועתקו.");
-  } catch {
-    toast("לא הצלחתי לשתף כרגע.");
-  }
-}
-
-function makeShareUrl() {
-  const payload = btoa(unescape(encodeURIComponent(JSON.stringify({ items: state.items }))))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/g, "");
-  return `${window.location.origin}${window.location.pathname}#list=${payload}`;
-}
-
 function readSharedState() {
   const match = window.location.hash.match(/^#list=(.+)$/);
   if (!match) return null;
@@ -534,6 +537,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=receipt-upload-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=receipt-pdf-1").catch(() => undefined);
   });
 }

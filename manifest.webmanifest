@@ -1,0 +1,17 @@
+{
+  "name": "קניות לבית",
+  "short_name": "קניות",
+  "description": "סוכן קניות פשוט לבית.",
+  "start_url": "./index.html?v=agent-list-1",
+  "display": "standalone",
+  "background_color": "#f7f7f8",
+  "theme_color": "#f1eeff",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

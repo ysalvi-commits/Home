@@ -1,0 +1,483 @@
+:root {
+  color-scheme: light;
+  --bg: #f7f7f8;
+  --surface: rgba(255, 255, 255, 0.78);
+  --surface-strong: #ffffff;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --line: rgba(60, 60, 67, 0.12);
+  --accent: #8f7ad8;
+  --accent-soft: #f1eeff;
+  --accent-strong: #7b67c5;
+  --wood: #b99365;
+  --shadow: 0 18px 48px rgba(31, 31, 35, 0.07);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100%;
+  direction: rtl;
+  text-align: right;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(circle at 82% -12%, rgba(241, 238, 255, 0.9), transparent 360px),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(247, 247, 248, 0.98) 42%),
+    repeating-linear-gradient(90deg, rgba(185, 147, 101, 0.025) 0 1px, transparent 1px 34px),
+    var(--bg);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+}
+
+.app-shell {
+  width: min(680px, calc(100% - 28px));
+  min-height: 100dvh;
+  margin-inline: auto;
+  padding: calc(18px + env(safe-area-inset-top)) 0 calc(28px + env(safe-area-inset-bottom));
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 2px 18px;
+}
+
+.eyebrow,
+p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.eyebrow {
+  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: clamp(34px, 9vw, 46px);
+  line-height: 0.98;
+  font-weight: 850;
+}
+
+h2 {
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 820;
+}
+
+h3 {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 780;
+}
+
+.save-pill {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 8px 12px;
+  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 780;
+  backdrop-filter: blur(18px);
+}
+
+.needed-card,
+.list-section,
+.add-form,
+.receipt-card {
+  background: var(--surface);
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(22px);
+}
+
+.needed-card {
+  padding: 18px;
+  background:
+    linear-gradient(135deg, rgba(241, 238, 255, 0.95), rgba(255, 255, 255, 0.76) 56%),
+    var(--surface);
+}
+
+.card-heading,
+.list-heading,
+.needed-item,
+.grocery-row,
+.quick-actions,
+.add-form {
+  display: flex;
+  align-items: center;
+}
+
+.card-heading {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.card-heading p,
+.list-heading p {
+  margin-top: 4px;
+  font-size: 14px;
+}
+
+#neededCount {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  color: white;
+  background: linear-gradient(180deg, #a99be8, var(--accent-strong));
+  border-radius: 18px;
+  font-size: 25px;
+  font-weight: 850;
+}
+
+.needed-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.needed-item {
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 8px 8px 8px 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(143, 122, 216, 0.16);
+  border-radius: 14px;
+}
+
+.needed-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 760;
+}
+
+.needed-item button,
+.add-form button,
+.secondary-button {
+  min-height: 44px;
+  padding-inline: 16px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.needed-item button,
+.add-form button {
+  color: white;
+  background: var(--accent);
+}
+
+.empty-needed,
+.empty-list {
+  padding: 18px 4px 6px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.quick-actions {
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.secondary-button {
+  flex: 1 1 0;
+  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(143, 122, 216, 0.18);
+}
+
+.add-form {
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px;
+}
+
+.add-form input,
+#searchInput {
+  min-width: 0;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  outline: 0;
+}
+
+.add-form input {
+  flex: 1 1 auto;
+  min-height: 44px;
+  padding-inline: 12px;
+  border-radius: 14px;
+}
+
+.add-form button {
+  flex: 0 0 auto;
+}
+
+.receipt-card {
+  margin-top: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.receipt-card summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 58px;
+  padding: 0 16px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.receipt-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.receipt-card summary span {
+  font-size: 17px;
+  font-weight: 820;
+}
+
+.receipt-card summary small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.receipt-body {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+}
+
+.receipt-body textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 118px;
+  padding: 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  border-radius: 14px;
+  outline: 0;
+  font: inherit;
+}
+
+.receipt-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.receipt-actions button,
+.file-button {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.receipt-actions button {
+  color: white;
+  background: var(--accent);
+}
+
+.file-button {
+  position: relative;
+}
+
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.list-section {
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.list-heading {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+}
+
+#searchInput {
+  width: 118px;
+  min-height: 40px;
+  padding-inline: 12px;
+  border-radius: 999px;
+}
+
+.grocery-list {
+  border-top: 1px solid rgba(60, 60, 67, 0.08);
+}
+
+.category-group {
+  padding-top: 10px;
+}
+
+.category-group h3 {
+  padding: 0 16px 8px;
+}
+
+.grocery-row {
+  position: relative;
+  min-height: 62px;
+  gap: 12px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.48);
+  border-top: 1px solid rgba(60, 60, 67, 0.075);
+}
+
+.grocery-row:first-of-type {
+  border-top: 0;
+}
+
+.grocery-row.is-needed {
+  background: rgba(241, 238, 255, 0.72);
+}
+
+.grocery-row input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.check-ui {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(143, 122, 216, 0.38);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.grocery-row input:checked + .check-ui {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.grocery-row input:checked + .check-ui::after {
+  content: "";
+  width: 8px;
+  height: 14px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) translate(-1px, -1px);
+}
+
+.item-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.item-copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 780;
+}
+
+.item-copy small,
+.row-state {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.row-state {
+  min-width: 42px;
+  text-align: left;
+}
+
+.is-needed .row-state {
+  color: var(--accent-strong);
+}
+
+.toast {
+  position: fixed;
+  left: 18px;
+  right: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 10;
+  width: min(420px, calc(100% - 36px));
+  margin-inline: auto;
+  padding: 14px 16px;
+  color: white;
+  background: rgba(29, 29, 31, 0.92);
+  border-radius: 14px;
+  text-align: center;
+  font-weight: 780;
+}
+
+@media (max-width: 520px) {
+  .app-shell {
+    width: min(100% - 22px, 680px);
+  }
+
+  .app-header {
+    align-items: flex-start;
+  }
+
+  .save-pill {
+    max-width: 124px;
+    text-align: center;
+  }
+
+  .list-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  #searchInput {
+    width: 100%;
+  }
+
+  .receipt-actions {
+    grid-template-columns: 1fr;
+  }
+}

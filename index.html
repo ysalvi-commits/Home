@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta name="theme-color" content="#f1eeff" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="קניות לבית" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>קניות לבית</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./assets/icon.svg" />
+    <link rel="stylesheet" href="./styles.css?v=agent-list-1" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">ירדן ונטע</p>
+          <h1>קניות לבית</h1>
+        </div>
+        <div class="save-pill" id="saveStatus">נשמר במכשיר</div>
+      </header>
+
+      <section class="needed-card" aria-labelledby="neededTitle">
+        <div class="card-heading">
+          <div>
+            <h2 id="neededTitle">לקנות עכשיו</h2>
+            <p id="neededSummary">אין כרגע מוצרים שסומנו כחסרים.</p>
+          </div>
+          <strong id="neededCount">0</strong>
+        </div>
+        <div id="neededList" class="needed-list" aria-live="polite"></div>
+        <div class="quick-actions">
+          <button id="shareButton" class="secondary-button" type="button">שליחה לנטע</button>
+          <button id="clearButton" class="secondary-button" type="button">סיימנו קנייה</button>
+        </div>
+      </section>
+
+      <form id="addForm" class="add-form">
+        <input id="newItemInput" type="text" autocomplete="off" placeholder="להוסיף מוצר לרשימה" />
+        <button type="submit">הוסף</button>
+      </form>
+
+      <details class="receipt-card">
+        <summary>
+          <span>ללמוד מקבלה</span>
+          <small id="learnSummary">הסוכן זוכר מוצרים שקניתם.</small>
+        </summary>
+        <div class="receipt-body">
+          <textarea id="receiptInput" rows="5" placeholder="מדביקים כאן טקסט מקבלה או מאישור הזמנה"></textarea>
+          <div class="receipt-actions">
+            <label class="secondary-button file-button">
+              העלאת טקסט
+              <input id="receiptFile" type="file" accept=".txt,.csv,.json,text/*" />
+            </label>
+            <button id="learnReceiptButton" type="button">למד מהקבלה</button>
+          </div>
+        </div>
+      </details>
+
+      <section class="list-section" aria-labelledby="allItemsTitle">
+        <div class="list-heading">
+          <div>
+            <h2 id="allItemsTitle">מה בדרך כלל קונים</h2>
+            <p>מסמנים רק מה שחסר.</p>
+          </div>
+          <input id="searchInput" type="search" autocomplete="off" placeholder="חיפוש" aria-label="חיפוש מוצר" />
+        </div>
+        <div id="groceryList" class="grocery-list"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" hidden></div>
+    <script src="./app.js?v=agent-list-1" type="module"></script>
+  </body>
+</html>

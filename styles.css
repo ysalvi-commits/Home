@@ -211,7 +211,7 @@ h3 {
 
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -226,10 +226,15 @@ h3 {
   text-align: center;
 }
 
-.upload-button {
+.upload-button,
+.scan-button {
   color: white;
   background: linear-gradient(180deg, #a99be8, var(--accent-strong));
   border-color: transparent;
+}
+
+.scan-button {
+  background: linear-gradient(180deg, #b5a8ed, #8f7ad8);
 }
 
 .add-form {

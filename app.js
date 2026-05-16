@@ -2,8 +2,10 @@ const STORAGE_KEY = "simple-grocery-list-he-v1";
 const LEGACY_KEY = "pantry-household-he-v1";
 const PDFJS_MODULE_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs";
 const PDFJS_WORKER_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs";
+const TESSERACT_SCRIPT_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
 
 let pdfJsPromise = null;
+let tesseractPromise = null;
 
 const defaultItems = [
   item("חלב", "מקרר"),
@@ -46,6 +48,7 @@ const elements = {
   clearButton: document.querySelector("#clearButton"),
   receiptInput: document.querySelector("#receiptInput"),
   receiptFile: document.querySelector("#receiptFile"),
+  receiptCamera: document.querySelector("#receiptCamera"),
   learnReceiptButton: document.querySelector("#learnReceiptButton"),
   learnSummary: document.querySelector("#learnSummary"),
   saveStatus: document.querySelector("#saveStatus"),
@@ -155,6 +158,7 @@ function bindEvents() {
 
   elements.learnReceiptButton.addEventListener("click", learnFromReceipt);
   elements.receiptFile.addEventListener("change", readReceiptFile);
+  elements.receiptCamera.addEventListener("change", scanReceiptImage);
 }
 
 function render() {
@@ -270,17 +274,7 @@ function learnFromReceipt() {
     return;
   }
 
-  const names = extractReceiptItems(text);
-  if (!names.length) {
-    toast("לא מצאתי מוצרים בקבלה.");
-    return;
-  }
-
-  const result = rememberPurchasedItems(names);
-  elements.receiptInput.value = "";
-  elements.learnSummary.textContent = `נלמדו ${result.learned} מוצרים, ${result.added} חדשים.`;
-  saveState(`למדתי ${result.learned} מוצרים`);
-  render();
+  if (learnFromReceiptText(text, "לא מצאתי מוצרים בקבלה.")) elements.receiptInput.value = "";
 }
 
 async function readReceiptFile(event) {
@@ -296,22 +290,49 @@ async function readReceiptFile(event) {
   try {
     toast(isPdfFile(file) ? "קורא PDF..." : "קורא קבלה...");
     const text = await readReceiptText(file);
-    const names = extractReceiptItems(text);
-    if (!names.length) {
-      toast("לא מצאתי מוצרים בקובץ.");
-      return;
-    }
-
-    const result = rememberPurchasedItems(names);
-    elements.receiptInput.value = "";
-    elements.learnSummary.textContent = `נלמדו ${result.learned} מוצרים, ${result.added} חדשים.`;
-    saveState(`למדתי ${result.learned} מוצרים`);
-    render();
+    learnFromReceiptText(text, "לא מצאתי מוצרים בקובץ.");
   } catch {
     toast(isPdfFile(file) ? "לא הצלחתי לקרוא את ה-PDF. נסה PDF עם טקסט." : "לא הצלחתי לקרוא את הקובץ.");
   } finally {
     event.target.value = "";
   }
+}
+
+async function scanReceiptImage(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  if (!file.type.startsWith("image/")) {
+    toast("צריך לצלם או לבחור תמונה של קבלה.");
+    event.target.value = "";
+    return;
+  }
+
+  try {
+    elements.saveStatus.textContent = "סורק קבלה...";
+    toast("סורק קבלה מהמצלמה...");
+    const text = await readImageText(file);
+    learnFromReceiptText(text, "לא הצלחתי לזהות מוצרים בתמונה.");
+  } catch {
+    toast("לא הצלחתי לסרוק את התמונה. נסה לצלם קרוב וברור יותר.");
+    elements.saveStatus.textContent = "נשמר במכשיר";
+  } finally {
+    event.target.value = "";
+  }
+}
+
+function learnFromReceiptText(text, emptyMessage) {
+  const names = extractReceiptItems(text);
+  if (!names.length) {
+    toast(emptyMessage);
+    return false;
+  }
+
+  const result = rememberPurchasedItems(names);
+  elements.learnSummary.textContent = `נלמדו ${result.learned} מוצרים, ${result.added} חדשים.`;
+  saveState(`למדתי ${result.learned} מוצרים`);
+  render();
+  return true;
 }
 
 function isSupportedReceiptFile(file) {
@@ -326,6 +347,44 @@ function isPdfFile(file) {
 async function readReceiptText(file) {
   if (isPdfFile(file)) return readPdfText(file);
   return file.text();
+}
+
+async function readImageText(file) {
+  const Tesseract = await loadTesseract();
+  const result = await Tesseract.recognize(file, "heb+eng", {
+    logger: (message) => {
+      if (message.status === "recognizing text" && Number.isFinite(message.progress)) {
+        elements.saveStatus.textContent = `סורק ${Math.round(message.progress * 100)}%`;
+      }
+    }
+  });
+  return result.data.text || "";
+}
+
+function loadTesseract() {
+  if (!tesseractPromise) {
+    tesseractPromise = loadScript(TESSERACT_SCRIPT_URL).then(() => window.Tesseract);
+  }
+  return tesseractPromise;
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector(`script[src="${src}"]`);
+    if (existing) {
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
+      if (window.Tesseract) resolve();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
 }
 
 async function readPdfText(file) {
@@ -537,6 +596,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=receipt-pdf-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=receipt-scan-1").catch(() => undefined);
   });
 }

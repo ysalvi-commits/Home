@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="אייקון המזווה">
+  <rect width="128" height="128" rx="24" fill="#8f7ad8"/>
+  <path d="M35 48h58l-6 52H41L35 48Z" fill="#ffffff" opacity="0.96"/>
+  <path d="M47 48c0-12 8-20 17-20s17 8 17 20" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+  <path d="M50 69h28M50 84h20" fill="none" stroke="#8f7ad8" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="89" cy="34" r="15" fill="#c8bdf5"/>
+</svg>

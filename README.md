@@ -28,4 +28,10 @@ http://127.0.0.1:4178/
 https://ysalvi-commits.github.io/Home/
 ```
 
+עותק נפרד לעפרי ורום:
+
+```text
+https://ysalvi-commits.github.io/Home/ofri-rom/
+```
+
 הערה: כרגע הזיכרון נשמר מקומית בדפדפן/באייפון. שיתוף חי בין שני מכשירים דורש חיבור backend קטן בהמשך.

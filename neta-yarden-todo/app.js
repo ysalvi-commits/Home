@@ -1,11 +1,17 @@
 const STORAGE_KEY = "neta-yarden-todo-v1";
+const EMAIL_PREF_KEY = "neta-yarden-todo-send-email-v1";
 const APP_LINK = "https://ysalvi-commits.github.io/Home/neta-yarden-todo/";
 const RECIPIENTS = ["yardensalvi@gmail.com", "barakneta1@gmail.com"];
 const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
+const SHARE_HASH_PREFIX = "#tasks=";
 
 const people = {
   yarden: "ירדן",
   neta: "נטע"
+};
+
+const uiState = {
+  editingTaskId: ""
 };
 
 const state = loadState();
@@ -15,10 +21,12 @@ const elements = {
   taskList: document.querySelector("#taskList"),
   taskCount: document.querySelector("#taskCount"),
   summaryText: document.querySelector("#summaryText"),
+  sendEmailToggle: document.querySelector("#sendEmailToggle"),
   shareButton: document.querySelector("#shareButton"),
   toast: document.querySelector("#toast")
 };
 
+elements.sendEmailToggle.checked = readEmailPreference();
 render();
 bindEvents();
 registerServiceWorker();
@@ -36,21 +44,64 @@ function bindEvents() {
   });
 
   elements.taskList.addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-confirm-id]");
-    if (!button) return;
-    confirmTask(button.dataset.confirmId);
+    const editButton = event.target.closest("button[data-edit-id]");
+    if (editButton) {
+      startEditingTask(editButton.dataset.editId);
+      return;
+    }
+
+    const cancelButton = event.target.closest("button[data-cancel-edit-id]");
+    if (cancelButton) {
+      cancelEditingTask();
+      return;
+    }
+
+    const saveButton = event.target.closest("button[data-save-edit-id]");
+    if (saveButton) {
+      saveEditedTask(saveButton.dataset.saveEditId);
+      return;
+    }
+
+    const confirmButton = event.target.closest("button[data-confirm-id]");
+    if (!confirmButton) return;
+    confirmTask(confirmButton.dataset.confirmId);
+  });
+
+  elements.taskList.addEventListener("keydown", (event) => {
+    const input = event.target.closest("input[data-edit-input-id]");
+    if (!input) return;
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      saveEditedTask(input.dataset.editInputId);
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancelEditingTask();
+    }
   });
 
   elements.shareButton.addEventListener("click", shareApp);
+  elements.sendEmailToggle.addEventListener("change", () => {
+    localStorage.setItem(EMAIL_PREF_KEY, elements.sendEmailToggle.checked ? "true" : "false");
+  });
 }
 
 function loadState() {
   const saved = readJson(localStorage.getItem(STORAGE_KEY));
-  if (saved?.tasks) {
-    return {
-      tasks: saved.tasks.map(normalizeTask).filter(Boolean),
-      updatedAt: saved.updatedAt || new Date().toISOString()
+  const shared = readSharedState();
+  const savedTasks = saved?.tasks ? saved.tasks.map(normalizeTask).filter(Boolean) : [];
+  const sharedTasks = shared?.tasks ? shared.tasks.map(normalizeTask).filter(Boolean) : [];
+
+  if (savedTasks.length || sharedTasks.length) {
+    const snapshot = {
+      tasks: sharedTasks.length ? mergeTasks(sharedTasks, savedTasks) : savedTasks,
+      updatedAt: shared?.updatedAt || saved?.updatedAt || new Date().toISOString()
     };
+
+    if (sharedTasks.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+    return snapshot;
   }
 
   return {
@@ -87,8 +138,13 @@ function addTask() {
   elements.taskInput.value = "";
   saveState();
   render();
-  notifyTaskAdded(task);
-  toast("המשימה נוספה.");
+
+  if (elements.sendEmailToggle.checked) {
+    notifyTaskAdded(task);
+    toast("המשימה נוספה, מייל בהכנה.");
+  } else {
+    toast("המשימה נוספה ללא מייל.");
+  }
 }
 
 function markTask(taskId, person, checked) {
@@ -112,6 +168,39 @@ function confirmTask(taskId) {
   saveState();
   render();
   toast("המשימה אושרה ונמחקה.");
+}
+
+function startEditingTask(taskId) {
+  if (!state.tasks.some((task) => task.id === taskId)) return;
+  uiState.editingTaskId = taskId;
+  renderTasks();
+  const input = elements.taskList.querySelector(`input[data-edit-input-id="${cssEscape(taskId)}"]`);
+  input?.focus();
+  input?.select();
+}
+
+function cancelEditingTask() {
+  uiState.editingTaskId = "";
+  renderTasks();
+}
+
+function saveEditedTask(taskId) {
+  const task = state.tasks.find((candidate) => candidate.id === taskId);
+  const input = elements.taskList.querySelector(`input[data-edit-input-id="${cssEscape(taskId)}"]`);
+  const title = input?.value.trim() || "";
+
+  if (!task || !input) return;
+  if (!title) {
+    toast("אי אפשר לשמור משימה ריקה.");
+    input.focus();
+    return;
+  }
+
+  task.title = title;
+  uiState.editingTaskId = "";
+  saveState();
+  render();
+  toast("המשימה עודכנה.");
 }
 
 function render() {
@@ -141,12 +230,11 @@ function renderTasks() {
 function renderTask(task) {
   const checkedNames = task.checkedBy.map((person) => people[person]).join(" ו");
   const needsConfirm = task.checkedBy.length > 0;
+  const isEditing = uiState.editingTaskId === task.id;
 
   return `
     <article class="task-item ${needsConfirm ? "is-pending-confirm" : ""}">
-      <div class="task-title">
-        <strong>${escapeHtml(task.title)}</strong>
-      </div>
+      ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
       <div class="completion-row" aria-label="סימון השלמה">
         ${renderPersonCheck(task, "yarden")}
         ${renderPersonCheck(task, "neta")}
@@ -156,6 +244,29 @@ function renderTask(task) {
         <button class="confirm-button" type="button" data-confirm-id="${escapeHtml(task.id)}">אישור וסיום</button>
       </div>
     </article>
+  `;
+}
+
+function renderReadonlyTaskTitle(task) {
+  return `
+    <div class="task-title-row">
+      <div class="task-title">
+        <strong>${escapeHtml(task.title)}</strong>
+      </div>
+      <button class="task-edit-button" type="button" data-edit-id="${escapeHtml(task.id)}">ערוך</button>
+    </div>
+  `;
+}
+
+function renderEditTaskTitle(task) {
+  return `
+    <div class="task-edit-row">
+      <input data-edit-input-id="${escapeHtml(task.id)}" value="${escapeHtml(task.title)}" aria-label="עריכת משימה" />
+      <div class="task-edit-actions">
+        <button class="save-edit-button" type="button" data-save-edit-id="${escapeHtml(task.id)}">שמור</button>
+        <button class="cancel-edit-button" type="button" data-cancel-edit-id="${escapeHtml(task.id)}">ביטול</button>
+      </div>
+    </div>
   `;
 }
 
@@ -190,6 +301,7 @@ async function notifyTaskAdded(task) {
 }
 
 function buildEmailPayload(task) {
+  const appLink = getShareLink();
   const subject = "נוספה משימת To Do";
   const body = [
     "נוספה משימת To Do חדשה:",
@@ -197,14 +309,14 @@ function buildEmailPayload(task) {
     task.title,
     "",
     "לפתיחת האפליקציה:",
-    APP_LINK
+    appLink
   ].join("\n");
 
   return {
     to: RECIPIENTS,
     subject,
     body,
-    appLink: APP_LINK,
+    appLink,
     taskTitle: task.title
   };
 }
@@ -218,10 +330,11 @@ function openMailDraft(payload) {
 }
 
 async function shareApp() {
+  const appLink = getShareLink();
   const shareData = {
     title: "To Do - נטע וירדן",
     text: "הרשימה שלנו",
-    url: APP_LINK
+    url: appLink
   };
 
   if (navigator.share) {
@@ -234,10 +347,10 @@ async function shareApp() {
   }
 
   try {
-    await navigator.clipboard.writeText(APP_LINK);
+    await navigator.clipboard.writeText(appLink);
     toast("הלינק הועתק.");
   } catch {
-    toast(APP_LINK);
+    toast(appLink);
   }
 }
 
@@ -251,12 +364,77 @@ function newId() {
   return `task-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function getShareLink() {
+  if (!state.tasks.length) return APP_LINK;
+  return `${APP_LINK}${SHARE_HASH_PREFIX}${encodeShareState({ tasks: state.tasks, updatedAt: state.updatedAt })}`;
+}
+
+function readSharedState() {
+  if (!window.location.hash.startsWith(SHARE_HASH_PREFIX)) return null;
+
+  try {
+    const snapshot = decodeShareState(window.location.hash.slice(SHARE_HASH_PREFIX.length));
+    if (!snapshot?.tasks?.length) return null;
+    window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    return snapshot;
+  } catch {
+    return null;
+  }
+}
+
+function encodeShareState(snapshot) {
+  const json = JSON.stringify(snapshot);
+  const bytes = new TextEncoder().encode(json);
+  let value = "";
+  bytes.forEach((byte) => {
+    value += String.fromCharCode(byte);
+  });
+  return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeShareState(value) {
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+function mergeTasks(primaryTasks, secondaryTasks) {
+  const merged = [];
+  const byTitle = new Map();
+
+  [...primaryTasks, ...secondaryTasks].forEach((task) => {
+    const key = simplify(task.title);
+    const existing = byTitle.get(key);
+    if (existing) {
+      existing.checkedBy = [...new Set([...existing.checkedBy, ...task.checkedBy])];
+      return;
+    }
+
+    const copy = { ...task, checkedBy: [...task.checkedBy] };
+    byTitle.set(key, copy);
+    merged.push(copy);
+  });
+
+  return merged;
+}
+
+function simplify(value) {
+  return String(value).toLowerCase().replace(/\s+/g, " ").trim();
+}
+
 function readJson(value) {
   try {
     return value ? JSON.parse(value) : null;
   } catch {
     return null;
   }
+}
+
+function readEmailPreference() {
+  const saved = localStorage.getItem(EMAIL_PREF_KEY);
+  return saved === null ? true : saved === "true";
 }
 
 function escapeHtml(value) {
@@ -266,6 +444,10 @@ function escapeHtml(value) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function cssEscape(value) {
+  return window.CSS?.escape ? window.CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&");
 }
 
 function toast(message) {

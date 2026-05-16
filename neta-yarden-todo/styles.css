@@ -147,6 +147,7 @@ h2 {
 
 .add-panel {
   display: grid;
+  gap: 10px;
   margin-top: 12px;
   padding: 10px;
 }
@@ -178,6 +179,58 @@ h2 {
   background: var(--accent);
   border-radius: 16px;
   font-weight: 820;
+}
+
+.email-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  width: fit-content;
+  min-height: 36px;
+  padding: 0 4px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 780;
+}
+
+.email-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.switch-ui {
+  position: relative;
+  width: 48px;
+  height: 30px;
+  flex: 0 0 auto;
+  background: rgba(118, 118, 128, 0.22);
+  border-radius: 999px;
+  pointer-events: none;
+  transition: background 160ms ease;
+}
+
+.switch-ui::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 24px;
+  height: 24px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(29, 29, 31, 0.18);
+  transition: transform 160ms ease;
+}
+
+.email-toggle input:checked + .switch-ui {
+  background: var(--accent);
+}
+
+.email-toggle input:checked + .switch-ui::after {
+  transform: translateX(-18px);
 }
 
 .task-panel {
@@ -238,11 +291,69 @@ h2 {
   min-width: 0;
 }
 
+.task-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .task-title strong {
   overflow-wrap: anywhere;
   font-size: 18px;
   line-height: 1.24;
   font-weight: 800;
+}
+
+.task-edit-button,
+.save-edit-button,
+.cancel-edit-button {
+  min-height: 34px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 820;
+}
+
+.task-edit-button {
+  flex: 0 0 auto;
+  padding-inline: 12px;
+  color: var(--accent-strong);
+  background: rgba(52, 120, 246, 0.1);
+}
+
+.task-edit-row {
+  display: grid;
+  gap: 8px;
+}
+
+.task-edit-row input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(52, 120, 246, 0.24);
+  border-radius: 14px;
+  outline: 0;
+  font-size: 17px;
+  font-weight: 760;
+}
+
+.task-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.save-edit-button {
+  padding-inline: 16px;
+  color: white;
+  background: var(--accent);
+}
+
+.cancel-edit-button {
+  padding-inline: 14px;
+  color: var(--muted);
+  background: rgba(118, 118, 128, 0.12);
 }
 
 .completion-row {
@@ -381,8 +492,18 @@ h2 {
     width: 100%;
   }
 
+  .email-toggle {
+    width: 100%;
+    justify-content: space-between;
+    padding: 0 4px 0 2px;
+  }
+
   .completion-row {
     grid-template-columns: 1fr;
+  }
+
+  .task-edit-actions button {
+    width: 100%;
   }
 
   .confirm-row {

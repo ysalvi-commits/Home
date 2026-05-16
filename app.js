@@ -337,7 +337,6 @@ function renderList() {
     .map((entry) => {
       const meta = [
         entry.note,
-        entry.category,
         entry.purchaseCount ? `Bought ${entry.purchaseCount} time${entry.purchaseCount === 1 ? "" : "s"}` : "",
         entry.lastBoughtAt ? `Updated ${formatDate(entry.lastBoughtAt)}` : ""
       ]

@@ -2,7 +2,7 @@
   "name": "To Do - Neta and Yarden",
   "short_name": "To Do",
   "description": "A shared to-do list for Neta and Yarden.",
-  "start_url": "./index.html?v=todo-10",
+  "start_url": "./index.html?v=todo-11",
   "display": "standalone",
   "background_color": "#f6f9ff",
   "theme_color": "#eef4ff",

@@ -125,7 +125,7 @@ p {
   grid-template-columns: 92px minmax(0, 1fr) 92px;
   align-items: center;
   gap: 12px;
-  padding: 4px 2px 12px;
+  padding: 2px 2px 10px;
   direction: ltr;
 }
 
@@ -196,7 +196,6 @@ h2 {
   object-position: 50% 34%;
 }
 
-.summary-panel,
 .add-panel,
 .task-panel {
   background: var(--surface);
@@ -206,42 +205,10 @@ h2 {
   backdrop-filter: blur(24px);
 }
 
-.summary-panel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 14px;
-  background:
-    linear-gradient(135deg, rgba(237, 244, 255, 0.98), rgba(255, 255, 255, 0.78) 60%),
-    var(--surface);
-}
-
-.summary-panel p {
-  margin-top: 5px;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.35;
-  font-weight: 650;
-}
-
-#taskCount {
-  display: grid;
-  place-items: center;
-  width: 48px;
-  height: 48px;
-  flex: 0 0 auto;
-  color: white;
-  background: linear-gradient(180deg, #6c96ff, var(--accent-strong));
-  border-radius: 16px;
-  font-size: 23px;
-  font-weight: 850;
-}
-
 .add-panel {
   display: grid;
   gap: 8px;
-  margin-top: 8px;
+  margin-top: 0;
   padding: 8px;
 }
 
@@ -749,10 +716,6 @@ h2 {
 
   .subtitle {
     font-size: 14px;
-  }
-
-  .summary-panel {
-    padding: 12px;
   }
 
   .email-toggle {

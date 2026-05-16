@@ -6,12 +6,14 @@ const RECIPIENTS = ["yardensalvi@gmail.com", "barakneta1@gmail.com"];
 const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
 const SHARE_HASH_PREFIX = "#tasks=";
 const PULL_REFRESH_THRESHOLD = 82;
+const AUTO_REFRESH_AFTER_HIDDEN_MS = 15_000;
 
 const uiState = {
   activeTab: "open",
   editingTaskId: "",
   swipe: null,
-  refresh: null
+  refresh: null,
+  hiddenAt: 0
 };
 
 const state = loadState();
@@ -21,9 +23,7 @@ const elements = {
   userNameInput: document.querySelector("#userNameInput"),
   taskList: document.querySelector("#taskList"),
   taskListTitle: document.querySelector("#taskListTitle"),
-  taskCount: document.querySelector("#taskCount"),
   newTaskBadge: document.querySelector("#newTaskBadge"),
-  summaryText: document.querySelector("#summaryText"),
   sendEmailToggle: document.querySelector("#sendEmailToggle"),
   openTab: document.querySelector("#openTab"),
   doneTab: document.querySelector("#doneTab"),
@@ -62,6 +62,8 @@ function bindEvents() {
   window.addEventListener("pointermove", movePullRefresh, { passive: false });
   window.addEventListener("pointerup", endPullRefresh);
   window.addEventListener("pointercancel", cancelPullRefresh);
+  document.addEventListener("visibilitychange", handleVisibilityRefresh);
+  window.addEventListener("focus", handleFocusRefresh);
 
   elements.taskList.addEventListener("click", (event) => {
     if (uiState.swipe?.completed) {
@@ -443,23 +445,36 @@ function refreshApp() {
   }, 260);
 }
 
+function handleVisibilityRefresh() {
+  if (document.visibilityState === "hidden") {
+    uiState.hiddenAt = Date.now();
+    return;
+  }
+
+  maybeAutoRefresh();
+}
+
+function handleFocusRefresh() {
+  maybeAutoRefresh();
+}
+
+function maybeAutoRefresh() {
+  if (!uiState.hiddenAt) return;
+  if (Date.now() - uiState.hiddenAt < AUTO_REFRESH_AFTER_HIDDEN_MS) return;
+  if (uiState.editingTaskId || elements.taskInput.value.trim()) return;
+  refreshApp();
+}
+
 function render() {
-  renderSummary();
+  renderCounts();
   renderTabs();
   renderTasks();
 }
 
-function renderSummary() {
+function renderCounts() {
   const count = state.tasks.length;
-  const wins = state.completedTasks.length;
-  elements.taskCount.textContent = String(count);
   elements.newTaskBadge.textContent = count > 99 ? "99+" : String(count);
   elements.newTaskBadge.hidden = count === 0;
-  elements.summaryText.textContent = count
-    ? `${count} open · ${wins} wins`
-    : wins
-      ? `No open tasks · ${wins} wins`
-      : "No open tasks right now.";
   updateAppIconBadge(count);
 }
 

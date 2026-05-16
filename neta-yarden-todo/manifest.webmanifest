@@ -1,11 +1,11 @@
 {
-  "name": "To Do - נטע וירדן",
+  "name": "To Do - Neta and Yarden",
   "short_name": "To Do",
-  "description": "רשימת משימות משותפת לנטע וירדן.",
-  "start_url": "./index.html?v=todo-6",
+  "description": "A shared to-do list for Neta and Yarden.",
+  "start_url": "./index.html?v=todo-7",
   "display": "standalone",
-  "background_color": "#f6f7f9",
-  "theme_color": "#e7f8f2",
+  "background_color": "#f6f9ff",
+  "theme_color": "#eef4ff",
   "icons": [
     {
       "src": "./assets/app-icon.png",

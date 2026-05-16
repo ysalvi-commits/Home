@@ -1,64 +1,65 @@
 <!doctype html>
-<html lang="he" dir="rtl">
+<html lang="en" dir="ltr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta http-equiv="Cache-Control" content="no-store" />
-    <meta name="theme-color" content="#f6f7f9" />
+    <meta name="theme-color" content="#eef4ff" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="To Do" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>To Do - נטע וירדן</title>
+    <title>To Do - Neta and Yarden</title>
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/app-icon.png" type="image/png" />
     <link rel="apple-touch-icon" href="./assets/app-icon.png" />
-    <link rel="stylesheet" href="./styles.css?v=todo-6" />
+    <link rel="stylesheet" href="./styles.css?v=todo-7" />
   </head>
   <body>
+    <button id="settingsButton" class="settings-button" type="button" aria-label="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6V20a2 2 0 1 1-4 0v-.08a1.7 1.7 0 0 0-1-.52 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H4a2 2 0 1 1 0-4h.08a1.7 1.7 0 0 0 .52-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 1 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6V4a2 2 0 1 1 4 0v.08a1.7 1.7 0 0 0 1 .52 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.22.33.4.66.52 1H20a2 2 0 1 1 0 4h-.08a1.7 1.7 0 0 0-.52 1Z" />
+      </svg>
+    </button>
     <main class="app-shell">
       <header class="hero">
-        <img class="hero-photo" src="./assets/app-photo.jpeg" alt="נטע וירדן" />
+        <img class="hero-photo" src="./assets/app-photo.jpeg" alt="Neta and Yarden" />
         <div class="hero-copy">
-          <p class="subtitle">נטע וירדן</p>
+          <p class="subtitle">Neta and Yarden</p>
           <h1>To Do</h1>
         </div>
-        <img class="hero-photo" src="./assets/app-photo.jpeg" alt="נטע וירדן" />
+        <img class="hero-photo" src="./assets/app-photo.jpeg" alt="Neta and Yarden" />
       </header>
 
       <section class="summary-panel" aria-labelledby="summaryTitle">
         <div>
-          <h2 id="summaryTitle">משימות פתוחות</h2>
-          <p id="summaryText">אין כרגע משימות פתוחות.</p>
+          <h2 id="summaryTitle">Open Tasks</h2>
+          <p id="summaryText">No open tasks right now.</p>
         </div>
         <strong id="taskCount">0</strong>
       </section>
 
-      <section class="profile-panel" aria-label="השם שלי">
-        <label for="userNameInput">השם שלי</label>
-        <input id="userNameInput" type="text" autocomplete="name" placeholder="מי מסיים משימות?" />
-      </section>
-
       <form id="addForm" class="add-panel" autocomplete="off">
         <div class="add-row">
-          <input id="taskInput" type="text" inputmode="text" placeholder="משימה חדשה" aria-label="משימה חדשה" />
-          <button type="submit">הוסף</button>
+          <input id="taskInput" type="text" inputmode="text" dir="rtl" placeholder="משימה חדשה" aria-label="New task" />
+          <button type="submit">Add</button>
         </div>
         <label class="email-toggle">
           <input id="sendEmailToggle" type="checkbox" checked />
           <span class="switch-ui" aria-hidden="true"></span>
-          <span>שליחת מייל</span>
+          <span>Send email</span>
         </label>
       </form>
 
-      <nav class="tabs" aria-label="משימות">
-        <button id="openTab" type="button" class="is-active">פתוחות</button>
-        <button id="doneTab" type="button">ניצחונות</button>
+      <nav class="tabs" aria-label="Tasks">
+        <button id="openTab" type="button" class="is-active">Open</button>
+        <button id="doneTab" type="button">Wins</button>
       </nav>
 
       <section class="task-panel" aria-labelledby="taskListTitle">
         <div class="section-heading">
-          <h2 id="taskListTitle">הרשימה שלנו</h2>
-          <button id="shareButton" class="icon-button" type="button" aria-label="שיתוף לינק">
+          <h2 id="taskListTitle">Our List</h2>
+          <button id="shareButton" class="icon-button" type="button" aria-label="Share link">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M7 17 17 7" />
               <path d="M9 7h8v8" />
@@ -69,8 +70,24 @@
       </section>
     </main>
 
+    <section id="settingsPanel" class="settings-panel" aria-label="Settings" hidden>
+      <button id="settingsBackdrop" class="settings-backdrop" type="button" aria-label="Close settings"></button>
+      <div class="settings-sheet" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <div class="settings-heading">
+          <h2 id="settingsTitle">Settings</h2>
+          <button id="closeSettingsButton" type="button" aria-label="Close settings">×</button>
+        </div>
+        <label class="name-field" for="userNameInput">
+          <span>Your name</span>
+          <input id="userNameInput" type="text" autocomplete="name" dir="auto" placeholder="Yarden / Neta" />
+        </label>
+        <p class="settings-note">This name is saved on this phone and appears in the Wins log.</p>
+        <button id="saveSettingsButton" class="save-settings-button" type="button">Save</button>
+      </div>
+    </section>
+
     <div id="snailParty" class="snail-party" aria-hidden="true"></div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=todo-6" type="module"></script>
+    <script src="./app.js?v=todo-7" type="module"></script>
   </body>
 </html>

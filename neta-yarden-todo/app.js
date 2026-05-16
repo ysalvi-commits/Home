@@ -7,15 +7,17 @@ const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
 const SHARE_HASH_PREFIX = "#tasks=";
 
 const STATUS_OPTIONS = [
-  { id: "open", label: "פתוח" },
-  { id: "progress", label: "בתהליך" },
-  { id: "stuck", label: "תקוע" }
+  { id: "ready", label: "Ready" },
+  { id: "progress", label: "In Progress" },
+  { id: "stuck", label: "Stuck" }
 ];
 const STATUS_IDS = new Set(STATUS_OPTIONS.map((status) => status.id));
+const STATUS_ALIASES = new Map([["open", "ready"]]);
 
 const uiState = {
   activeTab: "open",
-  editingTaskId: ""
+  editingTaskId: "",
+  swipe: null
 };
 
 const state = loadState();
@@ -31,6 +33,11 @@ const elements = {
   openTab: document.querySelector("#openTab"),
   doneTab: document.querySelector("#doneTab"),
   shareButton: document.querySelector("#shareButton"),
+  settingsButton: document.querySelector("#settingsButton"),
+  settingsPanel: document.querySelector("#settingsPanel"),
+  settingsBackdrop: document.querySelector("#settingsBackdrop"),
+  closeSettingsButton: document.querySelector("#closeSettingsButton"),
+  saveSettingsButton: document.querySelector("#saveSettingsButton"),
   snailParty: document.querySelector("#snailParty"),
   toast: document.querySelector("#toast")
 };
@@ -51,50 +58,49 @@ function bindEvents() {
     localStorage.setItem(USER_NAME_KEY, elements.userNameInput.value.trim());
   });
 
-  elements.taskList.addEventListener("change", (event) => {
-    const checkbox = event.target.closest("input[data-complete-id]");
-    if (!checkbox) return;
-    markTask(checkbox.dataset.completeId, checkbox.checked);
-  });
+  elements.taskList.addEventListener("pointerdown", startSwipe);
+  window.addEventListener("pointermove", moveSwipe);
+  window.addEventListener("pointerup", endSwipe);
+  window.addEventListener("pointercancel", cancelSwipe);
 
   elements.taskList.addEventListener("click", (event) => {
-    const statusButton = event.target.closest("button[data-status-id]");
+    if (uiState.swipe?.completed) {
+      event.preventDefault();
+      return;
+    }
+
+    const statusButton = closestElement(event.target, "button[data-status-id]");
     if (statusButton) {
       setTaskStatus(statusButton.dataset.statusId, statusButton.dataset.statusValue);
       return;
     }
 
-    const editButton = event.target.closest("button[data-edit-id]");
+    const editButton = closestElement(event.target, "button[data-edit-id]");
     if (editButton) {
       startEditingTask(editButton.dataset.editId);
       return;
     }
 
-    const cancelButton = event.target.closest("button[data-cancel-edit-id]");
+    const cancelButton = closestElement(event.target, "button[data-cancel-edit-id]");
     if (cancelButton) {
       cancelEditingTask();
       return;
     }
 
-    const saveButton = event.target.closest("button[data-save-edit-id]");
+    const saveButton = closestElement(event.target, "button[data-save-edit-id]");
     if (saveButton) {
       saveEditedTask(saveButton.dataset.saveEditId);
       return;
     }
 
-    const removeButton = event.target.closest("button[data-remove-id]");
+    const removeButton = closestElement(event.target, "button[data-remove-id]");
     if (removeButton) {
       removeTask(removeButton.dataset.removeId);
-      return;
     }
-
-    const confirmButton = event.target.closest("button[data-confirm-id]");
-    if (!confirmButton) return;
-    finishTask(confirmButton.dataset.confirmId);
   });
 
   elements.taskList.addEventListener("keydown", (event) => {
-    const input = event.target.closest("input[data-edit-input-id]");
+    const input = closestElement(event.target, "input[data-edit-input-id]");
     if (!input) return;
 
     if (event.key === "Enter") {
@@ -113,6 +119,15 @@ function bindEvents() {
   elements.shareButton.addEventListener("click", shareApp);
   elements.sendEmailToggle.addEventListener("change", () => {
     localStorage.setItem(EMAIL_PREF_KEY, elements.sendEmailToggle.checked ? "true" : "false");
+  });
+
+  elements.settingsButton.addEventListener("click", openSettings);
+  elements.settingsBackdrop.addEventListener("click", closeSettings);
+  elements.closeSettingsButton.addEventListener("click", closeSettings);
+  elements.saveSettingsButton.addEventListener("click", () => {
+    localStorage.setItem(USER_NAME_KEY, elements.userNameInput.value.trim());
+    closeSettings();
+    toast("User name saved.");
   });
 }
 
@@ -171,27 +186,27 @@ function normalizeCompletedTask(task) {
     id: String(task.id || newId()),
     title,
     status: normalizeStatus(task.status),
-    doneBy: String(task.doneBy || task.completedBy || task.finishedBy || "ללא שם").trim(),
+    doneBy: String(task.doneBy || task.completedBy || task.finishedBy || "Someone").trim(),
     doneAt: task.doneAt || task.completedAt || task.finishedAt || new Date().toISOString()
   };
 }
 
 function normalizeStatus(status) {
-  const value = String(status || "open");
-  return STATUS_IDS.has(value) ? value : "open";
+  const value = STATUS_ALIASES.get(String(status || "")) || String(status || "ready");
+  return STATUS_IDS.has(value) ? value : "ready";
 }
 
 function addTask() {
   const title = elements.taskInput.value.trim();
   if (!title) {
-    toast("צריך לכתוב משימה.");
+    toast("Add a task first.");
     return;
   }
 
   const task = {
     id: newId(),
     title,
-    status: "open",
+    status: "ready",
     completed: false
   };
 
@@ -202,19 +217,10 @@ function addTask() {
 
   if (elements.sendEmailToggle.checked) {
     notifyTaskAdded(task);
-    toast("המשימה נוספה, מייל בהכנה.");
+    toast("Task added. Email is ready.");
   } else {
-    toast("המשימה נוספה ללא מייל.");
+    toast("Task added without email.");
   }
-}
-
-function markTask(taskId, checked) {
-  const task = findTask(taskId);
-  if (!task) return;
-
-  task.completed = checked;
-  saveState();
-  render();
 }
 
 function setTaskStatus(taskId, status) {
@@ -235,7 +241,7 @@ function finishTask(taskId) {
     id: newId(),
     title: task.title,
     status: task.status,
-    doneBy: readUserName() || "ללא שם",
+    doneBy: readUserName() || "Someone",
     doneAt: new Date().toISOString()
   });
 
@@ -244,7 +250,7 @@ function finishTask(taskId) {
   saveState();
   render();
   celebrateSnails();
-  toast("ניצחון קטן לרשימה.");
+  toast("Achievement unlocked.");
 }
 
 function removeTask(taskId) {
@@ -255,7 +261,7 @@ function removeTask(taskId) {
   if (uiState.editingTaskId === taskId) uiState.editingTaskId = "";
   saveState();
   render();
-  toast("המשימה הוסרה.");
+  toast("Task removed.");
 }
 
 function startEditingTask(taskId) {
@@ -279,7 +285,7 @@ function saveEditedTask(taskId) {
 
   if (!task || !input) return;
   if (!title) {
-    toast("אי אפשר לשמור משימה ריקה.");
+    toast("Task cannot be empty.");
     input.focus();
     return;
   }
@@ -288,7 +294,7 @@ function saveEditedTask(taskId) {
   uiState.editingTaskId = "";
   saveState();
   render();
-  toast("המשימה עודכנה.");
+  toast("Task updated.");
 }
 
 function findTask(taskId) {
@@ -299,6 +305,94 @@ function setActiveTab(tab) {
   uiState.activeTab = tab === "done" ? "done" : "open";
   uiState.editingTaskId = "";
   render();
+}
+
+function startSwipe(event) {
+  const row = closestElement(event.target, ".swipe-task");
+  if (!row || closestElement(event.target, "button, input")) return;
+  if (typeof event.button === "number" && event.button !== 0) return;
+
+  const content = row.querySelector(".task-content");
+  uiState.swipe = {
+    id: row.dataset.taskId,
+    startX: event.clientX,
+    startY: event.clientY,
+    lastX: event.clientX,
+    row,
+    content,
+    dragging: false,
+    completed: false
+  };
+
+  try {
+    row.setPointerCapture?.(event.pointerId);
+  } catch {
+    // Some browsers only allow pointer capture on the original target.
+  }
+}
+
+function moveSwipe(event) {
+  const swipe = uiState.swipe;
+  if (!swipe || swipe.completed) return;
+
+  const deltaX = event.clientX - swipe.startX;
+  const deltaY = event.clientY - swipe.startY;
+  if (!swipe.dragging && Math.abs(deltaX) < 9) return;
+  if (!swipe.dragging && Math.abs(deltaY) > Math.abs(deltaX) * 1.1) {
+    cancelSwipe();
+    return;
+  }
+
+  swipe.dragging = true;
+  swipe.lastX = event.clientX;
+  const movement = Math.max(-136, Math.min(136, deltaX));
+  swipe.row.classList.toggle("is-swipe-ready", Math.abs(deltaX) > 86);
+  swipe.content.style.transform = `translateX(${movement}px)`;
+  event.preventDefault();
+}
+
+function endSwipe(event) {
+  const swipe = uiState.swipe;
+  if (!swipe) return;
+
+  const endX = typeof event?.clientX === "number" ? event.clientX : swipe.lastX;
+  const deltaX = endX - swipe.startX;
+  if (swipe.dragging && Math.abs(deltaX) > 96) {
+    swipe.completed = true;
+    finishTask(swipe.id);
+    uiState.swipe = null;
+    return;
+  }
+
+  resetSwipe(swipe);
+  uiState.swipe = null;
+}
+
+function cancelSwipe() {
+  if (uiState.swipe) resetSwipe(uiState.swipe);
+  uiState.swipe = null;
+}
+
+function resetSwipe(swipe) {
+  swipe.row.classList.remove("is-swipe-ready");
+  swipe.content.style.transform = "";
+}
+
+function openSettings() {
+  elements.userNameInput.value = readUserName();
+  elements.settingsPanel.hidden = false;
+  requestAnimationFrame(() => {
+    elements.settingsPanel.classList.add("is-open");
+    elements.userNameInput.focus();
+    elements.userNameInput.select();
+  });
+}
+
+function closeSettings() {
+  elements.settingsPanel.classList.remove("is-open");
+  window.setTimeout(() => {
+    elements.settingsPanel.hidden = true;
+  }, 180);
 }
 
 function render() {
@@ -312,33 +406,33 @@ function renderSummary() {
   const wins = state.completedTasks.length;
   elements.taskCount.textContent = String(count);
   elements.summaryText.textContent = count
-    ? `${count} פתוחות · ${wins} ניצחונות`
+    ? `${count} open · ${wins} wins`
     : wins
-      ? `אין פתוחות · ${wins} ניצחונות`
-      : "אין כרגע משימות פתוחות.";
+      ? `No open tasks · ${wins} wins`
+      : "No open tasks right now.";
 }
 
 function renderTabs() {
-  elements.openTab.textContent = state.tasks.length ? `פתוחות · ${state.tasks.length}` : "פתוחות";
-  elements.doneTab.textContent = state.completedTasks.length ? `ניצחונות · ${state.completedTasks.length}` : "ניצחונות";
+  elements.openTab.textContent = state.tasks.length ? `Open · ${state.tasks.length}` : "Open";
+  elements.doneTab.textContent = state.completedTasks.length ? `Wins · ${state.completedTasks.length}` : "Wins";
   elements.openTab.classList.toggle("is-active", uiState.activeTab === "open");
   elements.doneTab.classList.toggle("is-active", uiState.activeTab === "done");
 }
 
 function renderTasks() {
   if (uiState.activeTab === "done") {
-    elements.taskListTitle.textContent = "ניצחונות";
+    elements.taskListTitle.textContent = "Wins";
     renderCompletedTasks();
     return;
   }
 
-  elements.taskListTitle.textContent = "הרשימה שלנו";
+  elements.taskListTitle.textContent = "Our List";
   renderOpenTasks();
 }
 
 function renderOpenTasks() {
   if (!state.tasks.length) {
-    elements.taskList.innerHTML = '<div class="empty-list">אפשר להוסיף משימה חדשה למעלה.</div>';
+    elements.taskList.innerHTML = '<div class="empty-list">Add a new task above.</div>';
     return;
   }
 
@@ -347,7 +441,7 @@ function renderOpenTasks() {
 
 function renderCompletedTasks() {
   if (!state.completedTasks.length) {
-    elements.taskList.innerHTML = '<div class="empty-list">כאן יופיעו הניצחונות שלכם.</div>';
+    elements.taskList.innerHTML = '<div class="empty-list">Your wins will show up here.</div>';
     return;
   }
 
@@ -355,19 +449,15 @@ function renderCompletedTasks() {
 }
 
 function renderTask(task) {
-  const needsConfirm = task.completed;
   const isEditing = uiState.editingTaskId === task.id;
 
   return `
-    <article class="task-item ${needsConfirm ? "is-pending-confirm" : ""}">
-      ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
-      ${renderStatusControls(task)}
-      <div class="completion-row" aria-label="סימון השלמה">
-        ${renderCompletionCheck(task)}
-      </div>
-      <div class="confirm-row">
-        <span>סומן כבוצע</span>
-        <button class="confirm-button" type="button" data-confirm-id="${escapeHtml(task.id)}">סיום וחגיגה</button>
+    <article class="task-item swipe-task" data-task-id="${escapeHtml(task.id)}">
+      <div class="swipe-complete-bg" aria-hidden="true">Done</div>
+      <div class="task-content">
+        ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
+        ${renderStatusControls(task)}
+        <div class="swipe-hint">Swipe to complete</div>
       </div>
     </article>
   `;
@@ -377,11 +467,11 @@ function renderReadonlyTaskTitle(task) {
   return `
     <div class="task-title-row">
       <div class="task-title">
-        <strong>${escapeHtml(task.title)}</strong>
+        <strong dir="auto">${escapeHtml(task.title)}</strong>
       </div>
       <div class="task-actions">
-        <button class="task-edit-button" type="button" data-edit-id="${escapeHtml(task.id)}">ערוך</button>
-        <button class="task-remove-button" type="button" data-remove-id="${escapeHtml(task.id)}">הסר</button>
+        <button class="task-edit-button" type="button" data-edit-id="${escapeHtml(task.id)}">Edit</button>
+        <button class="task-remove-button" type="button" data-remove-id="${escapeHtml(task.id)}">Remove</button>
       </div>
     </div>
   `;
@@ -390,10 +480,10 @@ function renderReadonlyTaskTitle(task) {
 function renderEditTaskTitle(task) {
   return `
     <div class="task-edit-row">
-      <input data-edit-input-id="${escapeHtml(task.id)}" value="${escapeHtml(task.title)}" aria-label="עריכת משימה" />
+      <input data-edit-input-id="${escapeHtml(task.id)}" dir="auto" value="${escapeHtml(task.title)}" aria-label="Edit task" />
       <div class="task-edit-actions">
-        <button class="save-edit-button" type="button" data-save-edit-id="${escapeHtml(task.id)}">שמור</button>
-        <button class="cancel-edit-button" type="button" data-cancel-edit-id="${escapeHtml(task.id)}">ביטול</button>
+        <button class="save-edit-button" type="button" data-save-edit-id="${escapeHtml(task.id)}">Save</button>
+        <button class="cancel-edit-button" type="button" data-cancel-edit-id="${escapeHtml(task.id)}">Cancel</button>
       </div>
     </div>
   `;
@@ -401,7 +491,7 @@ function renderEditTaskTitle(task) {
 
 function renderStatusControls(task) {
   return `
-    <div class="status-row" aria-label="סטטוס">
+    <div class="status-row" aria-label="Status">
       ${STATUS_OPTIONS.map(
         (status) => `
           <button
@@ -418,22 +508,12 @@ function renderStatusControls(task) {
   `;
 }
 
-function renderCompletionCheck(task) {
-  return `
-    <label>
-      <input type="checkbox" data-complete-id="${escapeHtml(task.id)}" ${task.completed ? "checked" : ""} />
-      <span class="check-ui" aria-hidden="true"></span>
-      <span>${task.completed ? "בוצע" : "סמן כבוצע"}</span>
-    </label>
-  `;
-}
-
 function renderCompletedTask(task) {
   return `
     <article class="task-item completed-task">
       <div class="task-title">
-        <strong>${escapeHtml(task.title)}</strong>
-        <small class="done-meta">${escapeHtml(`סיים/ה: ${task.doneBy}`)} · ${escapeHtml(formatDateTime(task.doneAt))}</small>
+        <strong dir="auto">${escapeHtml(task.title)}</strong>
+        <small class="done-meta">${escapeHtml(`Completed by ${task.doneBy}`)} · ${escapeHtml(formatDateTime(task.doneAt))}</small>
       </div>
       <span class="completed-status status-${task.status}">${escapeHtml(statusLabel(task.status))}</span>
     </article>
@@ -461,13 +541,13 @@ async function notifyTaskAdded(task) {
 
 function buildEmailPayload(task) {
   const appLink = getShareLink();
-  const subject = "נוספה משימת To Do";
+  const subject = "New To Do task added";
   const body = [
-    "נוספה משימת To Do חדשה:",
+    "A new To Do task was added:",
     "",
     task.title,
     "",
-    "לפתיחת האפליקציה:",
+    "Open the app:",
     appLink
   ].join("\n");
 
@@ -491,8 +571,8 @@ function openMailDraft(payload) {
 async function shareApp() {
   const appLink = getShareLink();
   const shareData = {
-    title: "To Do - נטע וירדן",
-    text: "הרשימה שלנו",
+    title: "To Do - Neta and Yarden",
+    text: "Our list",
     url: appLink
   };
 
@@ -507,7 +587,7 @@ async function shareApp() {
 
   try {
     await navigator.clipboard.writeText(appLink);
-    toast("הלינק הועתק.");
+    toast("Link copied.");
   } catch {
     toast(appLink);
   }
@@ -584,7 +664,7 @@ function mergeOpenTasks(primaryTasks, secondaryTasks) {
     const existing = byTitle.get(key);
     if (existing) {
       existing.completed = existing.completed || task.completed;
-      if (existing.status === "open" && task.status !== "open") existing.status = task.status;
+      if (existing.status === "ready" && task.status !== "ready") existing.status = task.status;
       return;
     }
 
@@ -611,7 +691,7 @@ function mergeCompletedTasks(primaryTasks, secondaryTasks) {
 }
 
 function statusLabel(status) {
-  return STATUS_OPTIONS.find((candidate) => candidate.id === status)?.label || "פתוח";
+  return STATUS_OPTIONS.find((candidate) => candidate.id === status)?.label || "Ready";
 }
 
 function readUserName() {
@@ -646,7 +726,7 @@ function celebrateSnails() {
 function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("he-IL", {
+  return new Intl.DateTimeFormat("en", {
     day: "2-digit",
     month: "2-digit",
     hour: "2-digit",
@@ -669,6 +749,11 @@ function readJson(value) {
 function readEmailPreference() {
   const saved = localStorage.getItem(EMAIL_PREF_KEY);
   return saved === null ? true : saved === "true";
+}
+
+function closestElement(target, selector) {
+  const element = target instanceof Element ? target : target?.parentElement;
+  return element?.closest(selector) || null;
 }
 
 function escapeHtml(value) {

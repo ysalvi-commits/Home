@@ -78,6 +78,7 @@ const elements = {
   searchInput: document.querySelector("#searchInput"),
   addForm: document.querySelector("#addForm"),
   newItemInput: document.querySelector("#newItemInput"),
+  shoppingListButton: document.querySelector("#shoppingListButton"),
   clearButton: document.querySelector("#clearButton"),
   receiptInput: document.querySelector("#receiptInput"),
   receiptFile: document.querySelector("#receiptFile"),
@@ -96,6 +97,11 @@ const elements = {
   deleteMessage: document.querySelector("#deleteMessage"),
   cancelDeleteButton: document.querySelector("#cancelDeleteButton"),
   confirmDeleteButton: document.querySelector("#confirmDeleteButton"),
+  shoppingListDialog: document.querySelector("#shoppingListDialog"),
+  shoppingListText: document.querySelector("#shoppingListText"),
+  closeShoppingListButton: document.querySelector("#closeShoppingListButton"),
+  copyShoppingListButton: document.querySelector("#copyShoppingListButton"),
+  shareShoppingListButton: document.querySelector("#shareShoppingListButton"),
   toast: document.querySelector("#toast")
 };
 
@@ -253,6 +259,7 @@ function bindEvents() {
   elements.learnReceiptButton.addEventListener("click", learnFromReceipt);
   elements.receiptFile.addEventListener("change", readReceiptFile);
   elements.receiptCamera.addEventListener("change", scanReceiptImage);
+  elements.shoppingListButton.addEventListener("click", openShoppingListDialog);
   elements.editForm.addEventListener("submit", saveEditedItem);
   elements.cancelEditButton.addEventListener("click", closeEditDialog);
   elements.editDialog.addEventListener("click", closeModalOnBackdrop);
@@ -260,6 +267,10 @@ function bindEvents() {
   elements.confirmDeleteButton.addEventListener("click", confirmDeleteItem);
   elements.cancelDeleteButton.addEventListener("click", closeDeleteDialog);
   elements.deleteDialog.addEventListener("click", closeModalOnBackdrop);
+  elements.closeShoppingListButton.addEventListener("click", closeShoppingListDialog);
+  elements.copyShoppingListButton.addEventListener("click", copyShoppingList);
+  elements.shareShoppingListButton.addEventListener("click", shareShoppingList);
+  elements.shoppingListDialog.addEventListener("click", closeModalOnBackdrop);
 }
 
 function render() {
@@ -525,9 +536,75 @@ function confirmDeleteItem() {
   render();
 }
 
+function openShoppingListDialog() {
+  const text = buildShoppingListText();
+  if (!text) {
+    toast("אין כרגע מוצרים חסרים.");
+    return;
+  }
+
+  elements.shoppingListText.value = text;
+  elements.shoppingListDialog.hidden = false;
+  elements.shoppingListText.focus();
+  elements.shoppingListText.select();
+}
+
+function closeShoppingListDialog() {
+  elements.shoppingListDialog.hidden = true;
+}
+
+async function copyShoppingList() {
+  const text = elements.shoppingListText.value || buildShoppingListText();
+  if (!text) return;
+
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      elements.shoppingListText.focus();
+      elements.shoppingListText.select();
+      document.execCommand("copy");
+    }
+    toast("רשימת הקניות הועתקה");
+  } catch {
+    toast("לא הצלחתי להעתיק. אפשר לסמן ולהעתיק ידנית.");
+  }
+}
+
+async function shareShoppingList() {
+  const text = elements.shoppingListText.value || buildShoppingListText();
+  if (!text) return;
+
+  if (!navigator.share) {
+    await copyShoppingList();
+    return;
+  }
+
+  try {
+    await navigator.share({ title: "רשימת קניות", text });
+  } catch {
+    // User cancelled the share sheet.
+  }
+}
+
+function buildShoppingListText() {
+  const needed = state.items
+    .filter((entry) => entry.needed)
+    .sort((a, b) => a.category.localeCompare(b.category, "he") || a.name.localeCompare(b.name, "he"));
+
+  if (!needed.length) return "";
+
+  const lines = ["רשימת קניות:"];
+  needed.forEach((entry) => {
+    lines.push(`- ${entry.name}${entry.note ? ` (${entry.note})` : ""}`);
+  });
+  return lines.join("\n");
+}
+
 function closeModalOnBackdrop(event) {
   if (event.target === elements.editDialog) closeEditDialog();
   if (event.target === elements.deleteDialog) closeDeleteDialog();
+  if (event.target === elements.shoppingListDialog) closeShoppingListDialog();
 }
 
 function learnFromReceipt() {
@@ -876,6 +953,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=edit-delete-3").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=shopping-list-1").catch(() => undefined);
   });
 }

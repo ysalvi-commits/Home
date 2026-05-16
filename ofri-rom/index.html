@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=edit-delete-3" />
+    <link rel="stylesheet" href="./styles.css?v=shopping-list-1" />
   </head>
   <body>
     <main class="app-shell">
@@ -34,6 +34,7 @@
         </div>
         <div id="neededList" class="needed-list" aria-live="polite"></div>
         <div class="quick-actions">
+          <button id="shoppingListButton" class="secondary-button list-button" type="button">רשימת קניות</button>
           <label class="secondary-button scan-button" for="receiptCamera">סריקת קבלה</label>
           <label class="secondary-button upload-button" for="receiptFile">העלאת קבלה</label>
           <button id="clearButton" class="secondary-button" type="button">סיימנו קנייה</button>
@@ -107,7 +108,18 @@
         </div>
       </div>
     </div>
+    <div id="shoppingListDialog" class="modal-backdrop" hidden>
+      <div class="modal-card">
+        <h2>רשימת קניות</h2>
+        <textarea id="shoppingListText" class="shopping-list-output" rows="9" readonly></textarea>
+        <div class="modal-actions is-three">
+          <button id="closeShoppingListButton" class="secondary-button" type="button">סגור</button>
+          <button id="copyShoppingListButton" type="button">העתק</button>
+          <button id="shareShoppingListButton" type="button">שתף</button>
+        </div>
+      </div>
+    </div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=edit-delete-3" type="module"></script>
+    <script src="./app.js?v=shopping-list-1" type="module"></script>
   </body>
 </html>

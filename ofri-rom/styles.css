@@ -220,6 +220,11 @@ h3 {
   background: var(--accent);
 }
 
+.modal-actions button:not(.secondary-button):not(.danger-button) {
+  color: white;
+  background: var(--accent);
+}
+
 .empty-needed,
 .empty-list {
   padding: 18px 4px 6px;
@@ -229,7 +234,7 @@ h3 {
 
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
@@ -253,6 +258,12 @@ h3 {
 
 .scan-button {
   background: linear-gradient(180deg, #b5a8ed, #8f7ad8);
+}
+
+.list-button {
+  color: white;
+  background: linear-gradient(180deg, #b5a8ed, #8f7ad8);
+  border-color: transparent;
 }
 
 .add-form {
@@ -556,7 +567,8 @@ h3 {
   font-weight: 760;
 }
 
-.modal-card input {
+.modal-card input,
+.modal-card textarea {
   min-height: 44px;
   padding-inline: 12px;
   color: var(--text);
@@ -564,6 +576,15 @@ h3 {
   border: 1px solid rgba(60, 60, 67, 0.12);
   border-radius: 14px;
   outline: 0;
+}
+
+.modal-card textarea {
+  width: 100%;
+  min-height: 180px;
+  padding-block: 12px;
+  resize: none;
+  direction: rtl;
+  line-height: 1.55;
 }
 
 .modal-card p {
@@ -576,6 +597,10 @@ h3 {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   margin-top: 2px;
+}
+
+.modal-actions.is-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .danger-button {

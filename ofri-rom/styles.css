@@ -182,7 +182,7 @@ h3 {
   display: grid;
   gap: 8px;
   margin-top: 16px;
-  direction: ltr;
+  direction: rtl;
 }
 
 .needed-item {
@@ -199,7 +199,7 @@ h3 {
   display: grid;
   gap: 2px;
   min-width: 0;
-  text-align: left;
+  text-align: right;
 }
 
 .needed-copy strong {
@@ -414,7 +414,7 @@ h3 {
 }
 
 .grocery-list {
-  direction: ltr;
+  direction: rtl;
   border-top: 1px solid rgba(60, 60, 67, 0.08);
 }
 
@@ -475,7 +475,7 @@ h3 {
   padding: 0;
   color: inherit;
   background: transparent;
-  text-align: left;
+  text-align: right;
 }
 
 .item-copy {
@@ -483,6 +483,7 @@ h3 {
   gap: 2px;
   min-width: 0;
   flex: 1 1 auto;
+  text-align: right;
 }
 
 .item-copy strong {

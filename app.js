@@ -960,6 +960,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=ltr-shell-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=rtl-list-1").catch(() => undefined);
   });
 }

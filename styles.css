@@ -387,6 +387,32 @@ h3 {
   padding: 16px 16px 12px;
 }
 
+.list-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin: 0 16px 12px;
+  padding: 4px;
+  background: rgba(247, 247, 248, 0.9);
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  border-radius: 999px;
+}
+
+.list-tabs button {
+  min-height: 38px;
+  color: var(--muted);
+  background: transparent;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 820;
+}
+
+.list-tabs button[aria-selected="true"] {
+  color: var(--accent-strong);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 18px rgba(31, 31, 35, 0.08);
+}
+
 #searchInput {
   width: 118px;
   min-height: 40px;
@@ -423,6 +449,12 @@ h3 {
   content: "הסר";
   font-size: 14px;
   font-weight: 820;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.swipe-row.is-revealing::after {
+  opacity: 1;
 }
 
 .grocery-row {
@@ -449,43 +481,15 @@ h3 {
   transition: none;
 }
 
-.row-main {
+.row-content {
   display: flex;
   align-items: center;
-  gap: 12px;
   min-width: 0;
   flex: 1 1 auto;
-}
-
-.grocery-row input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.check-ui {
-  display: grid;
-  place-items: center;
-  width: 30px;
-  height: 30px;
-  flex: 0 0 auto;
-  border: 2px solid rgba(143, 122, 216, 0.38);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.7);
-}
-
-.grocery-row input:checked + .check-ui {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.grocery-row input:checked + .check-ui::after {
-  content: "";
-  width: 8px;
-  height: 14px;
-  border: solid white;
-  border-width: 0 2px 2px 0;
-  transform: rotate(45deg) translate(-1px, -1px);
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  text-align: right;
 }
 
 .item-copy {
@@ -504,19 +508,33 @@ h3 {
 }
 
 .item-copy small,
-.row-state {
+.row-buy-button {
   color: var(--muted);
   font-size: 13px;
   font-weight: 700;
 }
 
-.row-state {
-  min-width: 42px;
-  text-align: left;
+.row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
-.is-needed .row-state {
+.row-buy-button {
+  min-height: 36px;
+  padding-inline: 12px;
   color: var(--accent-strong);
+  background: rgba(241, 238, 255, 0.82);
+  border: 1px solid rgba(143, 122, 216, 0.18);
+  border-radius: 999px;
+  font-weight: 820;
+}
+
+.row-buy-button.is-selected {
+  color: white;
+  background: var(--accent);
+  border-color: transparent;
 }
 
 .row-edit-button {
@@ -529,6 +547,14 @@ h3 {
   border-radius: 999px;
   font-size: 13px;
   font-weight: 820;
+}
+
+.row-content:focus-visible,
+.row-buy-button:focus-visible,
+.row-edit-button:focus-visible,
+.list-tabs button:focus-visible {
+  outline: 3px solid rgba(143, 122, 216, 0.32);
+  outline-offset: 2px;
 }
 
 .modal-backdrop {

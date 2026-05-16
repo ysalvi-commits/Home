@@ -65,6 +65,7 @@ const categoryRules = [
 
 const state = loadState();
 const uiState = {
+  activeTab: "all",
   editingItemId: "",
   pendingDeleteId: "",
   swipe: null,
@@ -75,6 +76,8 @@ const elements = {
   neededSummary: document.querySelector("#neededSummary"),
   neededList: document.querySelector("#neededList"),
   groceryList: document.querySelector("#groceryList"),
+  allItemsTab: document.querySelector("#allItemsTab"),
+  toBuyTab: document.querySelector("#toBuyTab"),
   searchInput: document.querySelector("#searchInput"),
   addForm: document.querySelector("#addForm"),
   newItemInput: document.querySelector("#newItemInput"),
@@ -207,22 +210,26 @@ function normalize(snapshot) {
 }
 
 function bindEvents() {
-  elements.groceryList.addEventListener("change", (event) => {
-    const checkbox = event.target.closest("input[data-id]");
-    if (!checkbox) return;
-    if (Date.now() - uiState.lastSwipeAt < 450) {
-      const entry = findItem(checkbox.dataset.id);
-      if (entry) checkbox.checked = entry.needed;
-      return;
-    }
-    setNeeded(checkbox.dataset.id, checkbox.checked);
-  });
-
   elements.groceryList.addEventListener("click", (event) => {
     if (Date.now() - uiState.lastSwipeAt < 450) return;
-    const editButton = event.target.closest("button[data-action='edit']");
-    if (!editButton) return;
-    openEditDialog(editButton.dataset.id);
+    const actionButton = event.target.closest("button[data-action]");
+    if (!actionButton) return;
+
+    const action = actionButton.dataset.action;
+    const id = actionButton.dataset.id;
+    if (action === "edit") {
+      openEditDialog(id);
+      return;
+    }
+
+    if (action === "add-to-buy") {
+      addToBuy(id);
+      return;
+    }
+
+    if (action === "mark-bought") {
+      setNeeded(id, false);
+    }
   });
 
   elements.groceryList.addEventListener("touchstart", startRowSwipe, { passive: true });
@@ -235,6 +242,9 @@ function bindEvents() {
     if (!button) return;
     setNeeded(button.dataset.id, false);
   });
+
+  elements.allItemsTab.addEventListener("click", () => setActiveTab("all"));
+  elements.toBuyTab.addEventListener("click", () => setActiveTab("toBuy"));
 
   elements.searchInput.addEventListener("input", (event) => {
     state.search = event.target.value;
@@ -275,6 +285,7 @@ function bindEvents() {
 
 function render() {
   renderNeeded();
+  renderTabs();
   renderList();
 }
 
@@ -307,13 +318,17 @@ function renderNeeded() {
 
 function renderList() {
   const query = state.search.trim().toLowerCase();
-  const filtered = state.items.filter((entry) => {
+  const source = uiState.activeTab === "toBuy" ? state.items.filter((entry) => entry.needed) : state.items;
+  const filtered = source.filter((entry) => {
     const haystack = `${entry.name} ${entry.category} ${entry.note}`.toLowerCase();
     return !query || haystack.includes(query);
   });
 
   if (!filtered.length) {
-    elements.groceryList.innerHTML = '<div class="empty-list">לא מצאתי מוצר כזה.</div>';
+    elements.groceryList.innerHTML =
+      uiState.activeTab === "toBuy"
+        ? '<div class="empty-list">אין כרגע מוצרים בלשונית לקנייה.</div>'
+        : '<div class="empty-list">לא מצאתי מוצר כזה.</div>';
     return;
   }
 
@@ -337,16 +352,16 @@ function renderList() {
           return `
             <div class="swipe-row">
               <div class="grocery-row ${entry.needed ? "is-needed" : ""}" data-id="${escapeHtml(entry.id)}">
-                <label class="row-main">
-                  <input type="checkbox" data-id="${escapeHtml(entry.id)}" ${entry.needed ? "checked" : ""} />
-                  <span class="check-ui" aria-hidden="true"></span>
+                <button class="row-content" type="button" data-action="${uiState.activeTab === "toBuy" ? "mark-bought" : "add-to-buy"}" data-id="${escapeHtml(entry.id)}">
                   <span class="item-copy">
                     <strong>${escapeHtml(entry.name)}</strong>
                     ${meta ? `<small>${escapeHtml(meta)}</small>` : ""}
                   </span>
-                  <span class="row-state">${entry.needed ? "חסר" : "יש"}</span>
-                </label>
-                <button class="row-edit-button" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" aria-label="עריכת ${escapeHtml(entry.name)}">ערוך</button>
+                </button>
+                <div class="row-actions">
+                  <button class="row-buy-button ${entry.needed ? "is-selected" : ""}" type="button" data-action="${uiState.activeTab === "toBuy" ? "mark-bought" : "add-to-buy"}" data-id="${escapeHtml(entry.id)}">${uiState.activeTab === "toBuy" ? "נקנה" : entry.needed ? "ברשימה" : "לקנייה"}</button>
+                  <button class="row-edit-button" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}" aria-label="עריכת ${escapeHtml(entry.name)}">ערוך</button>
+                </div>
               </div>
             </div>
           `;
@@ -361,6 +376,29 @@ function renderList() {
       `;
     })
     .join("");
+}
+
+function renderTabs() {
+  const neededCount = state.items.filter((entry) => entry.needed).length;
+  elements.allItemsTab.setAttribute("aria-selected", String(uiState.activeTab === "all"));
+  elements.toBuyTab.setAttribute("aria-selected", String(uiState.activeTab === "toBuy"));
+  elements.toBuyTab.textContent = neededCount ? `לקנייה ${neededCount}` : "לקנייה";
+}
+
+function setActiveTab(tab) {
+  uiState.activeTab = tab;
+  renderTabs();
+  renderList();
+}
+
+function addToBuy(id) {
+  const entry = findItem(id);
+  if (!entry) return;
+  if (entry.needed) {
+    toast("כבר נמצא בלשונית לקנייה.");
+    return;
+  }
+  setNeeded(id, true);
 }
 
 function setNeeded(id, needed) {
@@ -464,7 +502,7 @@ function renderCategoryOptions() {
 
 function startRowSwipe(event) {
   const row = event.target.closest(".grocery-row");
-  if (!row || event.target.closest("button")) return;
+  if (!row || event.target.closest(".row-edit-button")) return;
   const touch = event.touches[0];
   uiState.swipe = {
     row,
@@ -489,6 +527,7 @@ function moveRowSwipe(event) {
   event.preventDefault();
   const offset = Math.max(swipe.dx, -92);
   swipe.row.style.transform = `translateX(${offset}px)`;
+  swipe.row.parentElement?.classList.add("is-revealing");
   swipe.row.classList.add("is-swiping");
 }
 
@@ -511,6 +550,7 @@ function cancelRowSwipe() {
 
 function resetSwipeRow(row) {
   row.style.transform = "";
+  row.parentElement?.classList.remove("is-revealing");
   row.classList.remove("is-swiping");
 }
 
@@ -953,6 +993,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=shopping-list-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=to-buy-tab-1").catch(() => undefined);
   });
 }

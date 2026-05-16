@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=shopping-list-1" />
+    <link rel="stylesheet" href="./styles.css?v=to-buy-tab-1" />
   </head>
   <body>
     <main class="app-shell">
@@ -70,6 +70,10 @@
           </div>
           <input id="searchInput" type="search" autocomplete="off" placeholder="חיפוש" aria-label="חיפוש מוצר" />
         </div>
+        <div class="list-tabs" role="tablist" aria-label="תצוגת רשימה">
+          <button id="allItemsTab" type="button" role="tab" aria-selected="true">כל המוצרים</button>
+          <button id="toBuyTab" type="button" role="tab" aria-selected="false">לקנייה</button>
+        </div>
         <div id="groceryList" class="grocery-list"></div>
       </section>
     </main>
@@ -120,6 +124,6 @@
       </div>
     </div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=shopping-list-1" type="module"></script>
+    <script src="./app.js?v=to-buy-tab-1" type="module"></script>
   </body>
 </html>

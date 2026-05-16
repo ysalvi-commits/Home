@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <meta name="theme-color" content="#f6f7f9" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="To Do" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <title>To Do - נטע וירדן</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./assets/icon.svg" />
+    <link rel="stylesheet" href="./styles.css?v=todo-1" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <img class="hero-photo" src="./assets/yarden-neta-1.jpeg" alt="נטע וירדן" />
+        <div class="hero-copy">
+          <p class="subtitle">נטע וירדן</p>
+          <h1>To Do</h1>
+        </div>
+        <img class="hero-photo" src="./assets/yarden-neta-2.jpeg" alt="נטע וירדן" />
+      </header>
+
+      <section class="summary-panel" aria-labelledby="summaryTitle">
+        <div>
+          <h2 id="summaryTitle">משימות פתוחות</h2>
+          <p id="summaryText">אין כרגע משימות פתוחות.</p>
+        </div>
+        <strong id="taskCount">0</strong>
+      </section>
+
+      <form id="addForm" class="add-panel" autocomplete="off">
+        <div class="add-row">
+          <input id="taskInput" type="text" inputmode="text" placeholder="משימה חדשה" aria-label="משימה חדשה" />
+          <button type="submit">הוסף</button>
+        </div>
+      </form>
+
+      <section class="task-panel" aria-labelledby="taskListTitle">
+        <div class="section-heading">
+          <h2 id="taskListTitle">הרשימה שלנו</h2>
+          <button id="shareButton" class="icon-button" type="button" aria-label="שיתוף לינק">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 17 17 7" />
+              <path d="M9 7h8v8" />
+            </svg>
+          </button>
+        </div>
+        <div id="taskList" class="task-list" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <div id="toast" class="toast" role="status" hidden></div>
+    <script src="./app.js?v=todo-1" type="module"></script>
+  </body>
+</html>

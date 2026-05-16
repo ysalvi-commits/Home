@@ -5,11 +5,6 @@ const RECIPIENTS = ["yardensalvi@gmail.com", "barakneta1@gmail.com"];
 const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
 const SHARE_HASH_PREFIX = "#tasks=";
 
-const people = {
-  yarden: "ירדן",
-  neta: "נטע"
-};
-
 const uiState = {
   editingTaskId: ""
 };
@@ -38,9 +33,9 @@ function bindEvents() {
   });
 
   elements.taskList.addEventListener("change", (event) => {
-    const checkbox = event.target.closest("input[data-task-id][data-person]");
+    const checkbox = event.target.closest("input[data-complete-id]");
     if (!checkbox) return;
-    markTask(checkbox.dataset.taskId, checkbox.dataset.person, checkbox.checked);
+    markTask(checkbox.dataset.completeId, checkbox.checked);
   });
 
   elements.taskList.addEventListener("click", (event) => {
@@ -59,6 +54,12 @@ function bindEvents() {
     const saveButton = event.target.closest("button[data-save-edit-id]");
     if (saveButton) {
       saveEditedTask(saveButton.dataset.saveEditId);
+      return;
+    }
+
+    const removeButton = event.target.closest("button[data-remove-id]");
+    if (removeButton) {
+      removeTask(removeButton.dataset.removeId);
       return;
     }
 
@@ -117,7 +118,7 @@ function normalizeTask(task) {
   return {
     id: String(task.id || newId()),
     title,
-    checkedBy: Array.isArray(task.checkedBy) ? task.checkedBy.filter((person) => people[person]) : []
+    completed: Boolean(task.completed || task.checked || task.done || (Array.isArray(task.checkedBy) && task.checkedBy.length))
   };
 }
 
@@ -131,7 +132,7 @@ function addTask() {
   const task = {
     id: newId(),
     title,
-    checkedBy: []
+    completed: false
   };
 
   state.tasks.unshift(task);
@@ -147,14 +148,11 @@ function addTask() {
   }
 }
 
-function markTask(taskId, person, checked) {
+function markTask(taskId, checked) {
   const task = state.tasks.find((candidate) => candidate.id === taskId);
-  if (!task || !people[person]) return;
+  if (!task) return;
 
-  const checkedBy = new Set(task.checkedBy);
-  if (checked) checkedBy.add(person);
-  else checkedBy.delete(person);
-  task.checkedBy = [...checkedBy];
+  task.completed = checked;
 
   saveState();
   render();
@@ -168,6 +166,17 @@ function confirmTask(taskId) {
   saveState();
   render();
   toast("המשימה אושרה ונמחקה.");
+}
+
+function removeTask(taskId) {
+  const index = state.tasks.findIndex((task) => task.id === taskId);
+  if (index === -1) return;
+
+  state.tasks.splice(index, 1);
+  if (uiState.editingTaskId === taskId) uiState.editingTaskId = "";
+  saveState();
+  render();
+  toast("המשימה הוסרה.");
 }
 
 function startEditingTask(taskId) {
@@ -228,19 +237,17 @@ function renderTasks() {
 }
 
 function renderTask(task) {
-  const checkedNames = task.checkedBy.map((person) => people[person]).join(" ו");
-  const needsConfirm = task.checkedBy.length > 0;
+  const needsConfirm = task.completed;
   const isEditing = uiState.editingTaskId === task.id;
 
   return `
     <article class="task-item ${needsConfirm ? "is-pending-confirm" : ""}">
       ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
       <div class="completion-row" aria-label="סימון השלמה">
-        ${renderPersonCheck(task, "yarden")}
-        ${renderPersonCheck(task, "neta")}
+        ${renderCompletionCheck(task)}
       </div>
       <div class="confirm-row">
-        <span>${escapeHtml(`${checkedNames || "מישהו"} סימן/ה שבוצע`)}</span>
+        <span>סומן כבוצע</span>
         <button class="confirm-button" type="button" data-confirm-id="${escapeHtml(task.id)}">אישור וסיום</button>
       </div>
     </article>
@@ -253,7 +260,10 @@ function renderReadonlyTaskTitle(task) {
       <div class="task-title">
         <strong>${escapeHtml(task.title)}</strong>
       </div>
-      <button class="task-edit-button" type="button" data-edit-id="${escapeHtml(task.id)}">ערוך</button>
+      <div class="task-actions">
+        <button class="task-edit-button" type="button" data-edit-id="${escapeHtml(task.id)}">ערוך</button>
+        <button class="task-remove-button" type="button" data-remove-id="${escapeHtml(task.id)}">הסר</button>
+      </div>
     </div>
   `;
 }
@@ -270,13 +280,12 @@ function renderEditTaskTitle(task) {
   `;
 }
 
-function renderPersonCheck(task, person) {
-  const checked = task.checkedBy.includes(person);
+function renderCompletionCheck(task) {
   return `
     <label>
-      <input type="checkbox" data-task-id="${escapeHtml(task.id)}" data-person="${person}" ${checked ? "checked" : ""} />
+      <input type="checkbox" data-complete-id="${escapeHtml(task.id)}" ${task.completed ? "checked" : ""} />
       <span class="check-ui" aria-hidden="true"></span>
-      <span>${people[person]}</span>
+      <span>בוצע</span>
     </label>
   `;
 }
@@ -408,11 +417,11 @@ function mergeTasks(primaryTasks, secondaryTasks) {
     const key = simplify(task.title);
     const existing = byTitle.get(key);
     if (existing) {
-      existing.checkedBy = [...new Set([...existing.checkedBy, ...task.checkedBy])];
+      existing.completed = existing.completed || task.completed;
       return;
     }
 
-    const copy = { ...task, checkedBy: [...task.checkedBy] };
+    const copy = { ...task };
     byTitle.set(key, copy);
     merged.push(copy);
   });

@@ -2,7 +2,7 @@
   "name": "To Do - נטע וירדן",
   "short_name": "To Do",
   "description": "רשימת משימות משותפת לנטע וירדן.",
-  "start_url": "./index.html?v=todo-4",
+  "start_url": "./index.html?v=todo-5",
   "display": "standalone",
   "background_color": "#f6f7f9",
   "theme_color": "#f6f7f9",

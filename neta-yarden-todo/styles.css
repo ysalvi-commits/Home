@@ -306,6 +306,7 @@ h2 {
 }
 
 .task-edit-button,
+.task-remove-button,
 .save-edit-button,
 .cancel-edit-button {
   min-height: 34px;
@@ -314,11 +315,22 @@ h2 {
   font-weight: 820;
 }
 
-.task-edit-button {
+.task-actions {
+  display: flex;
   flex: 0 0 auto;
+  gap: 7px;
+}
+
+.task-edit-button {
   padding-inline: 12px;
   color: var(--accent-strong);
   background: rgba(52, 120, 246, 0.1);
+}
+
+.task-remove-button {
+  padding-inline: 12px;
+  color: #c42828;
+  background: rgba(255, 59, 48, 0.1);
 }
 
 .task-edit-row {
@@ -358,7 +370,7 @@ h2 {
 
 .completion-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 8px;
 }
 
@@ -391,6 +403,7 @@ h2 {
   border: 2px solid rgba(52, 120, 246, 0.32);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.78);
+  pointer-events: none;
 }
 
 .completion-row input:checked + .check-ui {
@@ -496,10 +509,6 @@ h2 {
     width: 100%;
     justify-content: space-between;
     padding: 0 4px 0 2px;
-  }
-
-  .completion-row {
-    grid-template-columns: 1fr;
   }
 
   .task-edit-actions button {

@@ -400,18 +400,6 @@ h3 {
   overflow: hidden;
 }
 
-.swipe-delete-bg {
-  position: absolute;
-  inset: 0 0 0 auto;
-  display: grid;
-  place-items: center;
-  width: 92px;
-  color: white;
-  background: #d65f5f;
-  font-size: 14px;
-  font-weight: 820;
-}
-
 .grocery-row {
   position: relative;
   min-height: 62px;
@@ -419,8 +407,7 @@ h3 {
   padding: 10px 12px 10px 16px;
   background: rgba(255, 255, 255, 0.48);
   border-top: 1px solid rgba(60, 60, 67, 0.075);
-  transition: transform 180ms ease, background 180ms ease;
-  will-change: transform;
+  transition: background 180ms ease;
 }
 
 .grocery-row:first-of-type {
@@ -429,10 +416,6 @@ h3 {
 
 .grocery-row.is-needed {
   background: rgba(241, 238, 255, 0.72);
-}
-
-.grocery-row.is-swiping {
-  transition: none;
 }
 
 .row-main {

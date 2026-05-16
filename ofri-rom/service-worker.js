@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "ofri-rom-shopping-agent-";
-const CACHE_NAME = `${CACHE_PREFIX}v6`;
+const CACHE_NAME = `${CACHE_PREFIX}v7`;
 const ASSETS = [
   "./",
   "./index.html",

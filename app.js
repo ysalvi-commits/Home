@@ -325,7 +325,6 @@ function renderList() {
 
           return `
             <div class="swipe-row">
-              <div class="swipe-delete-bg">הסר</div>
               <div class="grocery-row ${entry.needed ? "is-needed" : ""}" data-id="${escapeHtml(entry.id)}">
                 <label class="row-main">
                   <input type="checkbox" data-id="${escapeHtml(entry.id)}" ${entry.needed ? "checked" : ""} />
@@ -477,15 +476,11 @@ function moveRowSwipe(event) {
   if (swipe.dx >= 0) return;
 
   event.preventDefault();
-  const offset = Math.max(swipe.dx, -92);
-  swipe.row.style.transform = `translateX(${offset}px)`;
-  swipe.row.classList.add("is-swiping");
 }
 
 function endRowSwipe() {
   const swipe = uiState.swipe;
   if (!swipe?.active) return;
-  resetSwipeRow(swipe.row);
   uiState.swipe = null;
 
   if (swipe.dx < -72 && Math.abs(swipe.dy) < 48) {
@@ -495,13 +490,7 @@ function endRowSwipe() {
 }
 
 function cancelRowSwipe() {
-  if (uiState.swipe?.row) resetSwipeRow(uiState.swipe.row);
   uiState.swipe = null;
-}
-
-function resetSwipeRow(row) {
-  row.style.transform = "";
-  row.classList.remove("is-swiping");
 }
 
 function openDeleteDialog(id) {
@@ -877,6 +866,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=edit-delete-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=edit-delete-2").catch(() => undefined);
   });
 }

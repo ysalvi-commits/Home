@@ -210,15 +210,26 @@ h3 {
 }
 
 .quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
 
 .secondary-button {
+  display: grid;
+  place-items: center;
   flex: 1 1 0;
   color: var(--accent-strong);
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid rgba(143, 122, 216, 0.18);
+  text-align: center;
+}
+
+.upload-button {
+  color: white;
+  background: linear-gradient(180deg, #a99be8, var(--accent-strong));
+  border-color: transparent;
 }
 
 .add-form {
@@ -323,10 +334,12 @@ h3 {
   position: relative;
 }
 
-.file-button input {
+.receipt-file-input {
   position: absolute;
-  inset: 0;
+  width: 1px;
+  height: 1px;
   opacity: 0;
+  pointer-events: none;
 }
 
 .list-section {
@@ -478,6 +491,10 @@ h3 {
   }
 
   .receipt-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .quick-actions {
     grid-template-columns: 1fr;
   }
 }

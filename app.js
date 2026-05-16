@@ -285,14 +285,34 @@ function readReceiptFile(event) {
   const file = event.target.files?.[0];
   if (!file) return;
 
+  if (!isSupportedReceiptFile(file)) {
+    toast("כרגע אפשר להעלות קבלת טקסט, CSV או JSON.");
+    event.target.value = "";
+    return;
+  }
+
   const reader = new FileReader();
   reader.onload = () => {
-    elements.receiptInput.value = String(reader.result || "");
-    toast("טקסט הקבלה נטען.");
+    const names = extractReceiptItems(String(reader.result || ""));
+    if (!names.length) {
+      toast("לא מצאתי מוצרים בקובץ.");
+      return;
+    }
+
+    const result = rememberPurchasedItems(names);
+    elements.receiptInput.value = "";
+    elements.learnSummary.textContent = `נלמדו ${result.learned} מוצרים, ${result.added} חדשים.`;
+    saveState(`למדתי ${result.learned} מוצרים`);
+    render();
   };
   reader.onerror = () => toast("לא הצלחתי לקרוא את הקובץ.");
   reader.readAsText(file);
   event.target.value = "";
+}
+
+function isSupportedReceiptFile(file) {
+  const name = file.name.toLowerCase();
+  return file.type.startsWith("text/") || [".txt", ".csv", ".json"].some((suffix) => name.endsWith(suffix));
 }
 
 function rememberPurchasedItems(names) {
@@ -514,6 +534,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=agent-list-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=receipt-upload-1").catch(() => undefined);
   });
 }

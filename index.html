@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=agent-list-1" />
+    <link rel="stylesheet" href="./styles.css?v=receipt-upload-1" />
   </head>
   <body>
     <main class="app-shell">
@@ -34,6 +34,7 @@
         </div>
         <div id="neededList" class="needed-list" aria-live="polite"></div>
         <div class="quick-actions">
+          <label class="secondary-button upload-button" for="receiptFile">העלאת קבלה</label>
           <button id="shareButton" class="secondary-button" type="button">שליחה לנטע</button>
           <button id="clearButton" class="secondary-button" type="button">סיימנו קנייה</button>
         </div>
@@ -52,9 +53,8 @@
         <div class="receipt-body">
           <textarea id="receiptInput" rows="5" placeholder="מדביקים כאן טקסט מקבלה או מאישור הזמנה"></textarea>
           <div class="receipt-actions">
-            <label class="secondary-button file-button">
+            <label class="secondary-button file-button" for="receiptFile">
               העלאת טקסט
-              <input id="receiptFile" type="file" accept=".txt,.csv,.json,text/*" />
             </label>
             <button id="learnReceiptButton" type="button">למד מהקבלה</button>
           </div>
@@ -73,7 +73,8 @@
       </section>
     </main>
 
+    <input id="receiptFile" class="receipt-file-input" type="file" accept=".txt,.csv,.json,text/*" />
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=agent-list-1" type="module"></script>
+    <script src="./app.js?v=receipt-upload-1" type="module"></script>
   </body>
 </html>

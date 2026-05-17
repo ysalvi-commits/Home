@@ -62,6 +62,7 @@ elements.sendEmailToggle.checked = readEmailPreference();
 elements.userNameInput.value = readUserName();
 render();
 bindEvents();
+disablePinchZoom();
 registerServiceWorker();
 initializeSharedBackend();
 
@@ -147,6 +148,18 @@ function bindEvents() {
     toast("User name saved.");
   });
   elements.toast.addEventListener("click", handleToastClick);
+}
+
+function disablePinchZoom() {
+  const preventZoom = (event) => event.preventDefault();
+  const preventMultiTouchZoom = (event) => {
+    if (event.touches?.length > 1) event.preventDefault();
+  };
+
+  document.addEventListener("gesturestart", preventZoom, { passive: false });
+  document.addEventListener("gesturechange", preventZoom, { passive: false });
+  document.addEventListener("gestureend", preventZoom, { passive: false });
+  document.addEventListener("touchmove", preventMultiTouchZoom, { passive: false });
 }
 
 function loadState() {

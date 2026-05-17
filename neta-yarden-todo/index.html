@@ -12,25 +12,16 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/app-icon.png" type="image/png" />
     <link rel="apple-touch-icon" href="./assets/app-icon.png" />
-    <link rel="stylesheet" href="./styles.css?v=todo-18" />
+    <link rel="stylesheet" href="./styles.css?v=todo-19" />
   </head>
   <body>
-    <button id="settingsButton" class="settings-button" type="button" aria-label="Settings">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-        <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6V20a2 2 0 1 1-4 0v-.08a1.7 1.7 0 0 0-1-.52 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H4a2 2 0 1 1 0-4h.08a1.7 1.7 0 0 0 .52-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 1 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6V4a2 2 0 1 1 4 0v.08a1.7 1.7 0 0 0 1 .52 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.22.33.4.66.52 1H20a2 2 0 1 1 0 4h-.08a1.7 1.7 0 0 0-.52 1Z" />
-      </svg>
-    </button>
     <div id="pullRefresh" class="pull-refresh" aria-hidden="true">Pull to refresh</div>
     <main class="app-shell">
       <header class="hero">
         <img class="hero-photo" src="./assets/app-photo-left.jpeg" alt="Neta and Yarden" />
         <div class="hero-copy">
           <p class="subtitle">Neta and Yarden</p>
-          <h1>
-            To Do
-            <span id="newTaskBadge" class="app-badge" aria-label="Open task badge" hidden>0</span>
-          </h1>
+          <h1>To Do</h1>
         </div>
         <img class="hero-photo" src="./assets/app-photo-right.jpeg" alt="Neta and Yarden" />
       </header>
@@ -41,7 +32,7 @@
           <button id="doneTab" type="button">Wins</button>
         </nav>
         <div class="add-row">
-          <input id="taskInput" type="text" inputmode="text" dir="rtl" placeholder="משימה חדשה" aria-label="New task" />
+          <input id="taskInput" type="text" inputmode="text" dir="rtl" placeholder="add new task here" aria-label="New task" />
           <button type="submit">Add</button>
         </div>
         <label class="email-toggle">
@@ -58,6 +49,15 @@
         <div id="taskList" class="task-list" aria-live="polite"></div>
       </section>
     </main>
+
+    <footer class="app-footer" aria-label="App footer">
+      <button id="settingsButton" class="settings-button" type="button" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+          <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.05.05a2 2 0 1 1-2.83 2.83l-.05-.05A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6V20a2 2 0 1 1-4 0v-.08a1.7 1.7 0 0 0-1-.52 1.7 1.7 0 0 0-1.88.34l-.05.05a2 2 0 1 1-2.83-2.83l.05-.05A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H4a2 2 0 1 1 0-4h.08a1.7 1.7 0 0 0 .52-1 1.7 1.7 0 0 0-.34-1.88l-.05-.05a2 2 0 1 1 2.83-2.83l.05.05A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6V4a2 2 0 1 1 4 0v.08a1.7 1.7 0 0 0 1 .52 1.7 1.7 0 0 0 1.88-.34l.05-.05a2 2 0 1 1 2.83 2.83l-.05.05A1.7 1.7 0 0 0 19.4 9c.22.33.4.66.52 1H20a2 2 0 1 1 0 4h-.08a1.7 1.7 0 0 0-.52 1Z" />
+        </svg>
+      </button>
+    </footer>
 
     <section id="settingsPanel" class="settings-panel" aria-label="Settings" hidden>
       <button id="settingsBackdrop" class="settings-backdrop" type="button" aria-label="Close settings"></button>
@@ -81,6 +81,6 @@
 
     <div id="snailParty" class="snail-party" aria-hidden="true"></div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=todo-18" type="module"></script>
+    <script src="./app.js?v=todo-19" type="module"></script>
   </body>
 </html>

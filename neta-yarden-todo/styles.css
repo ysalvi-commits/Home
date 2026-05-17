@@ -54,31 +54,43 @@ p {
 }
 
 .settings-button {
-  position: fixed;
-  top: calc(14px + env(safe-area-inset-top));
-  left: calc(14px + env(safe-area-inset-left));
-  z-index: 20;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   color: var(--accent-strong);
   background: rgba(255, 255, 255, 0.82);
   border: 1px solid rgba(75, 124, 243, 0.16);
-  border-radius: 50%;
+  border-radius: 12px;
   box-shadow: none;
   backdrop-filter: blur(20px);
 }
 
-.settings-button svg,
-.icon-button svg {
-  width: 20px;
-  height: 20px;
+.settings-button svg {
+  width: 18px;
+  height: 18px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2.3;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.app-footer {
+  position: fixed;
+  left: 50%;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: flex;
+  justify-content: flex-start;
+  width: min(560px, calc(100% - 28px));
+  padding: 7px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: none;
+  backdrop-filter: blur(18px);
+  transform: translateX(-50%);
 }
 
 .pull-refresh {
@@ -117,7 +129,7 @@ p {
   width: min(560px, calc(100% - 28px));
   min-height: 100dvh;
   margin-inline: auto;
-  padding: calc(14px + env(safe-area-inset-top)) 0 calc(26px + env(safe-area-inset-bottom));
+  padding: calc(14px + env(safe-area-inset-top)) 0 calc(72px + env(safe-area-inset-bottom));
 }
 
 .hero {
@@ -150,31 +162,8 @@ h1 {
   font-weight: 860;
 }
 
-.app-badge {
-  position: absolute;
-  top: -7px;
-  right: -15px;
-  display: grid;
-  place-items: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 6px;
-  color: white;
-  background: #ff3b30;
-  border: 2px solid rgba(255, 255, 255, 0.95);
-  border-radius: 999px;
-  box-shadow: 0 8px 18px rgba(255, 59, 48, 0.28);
-  font-size: 11px;
-  line-height: 1;
-  font-weight: 900;
-}
-
-.app-badge[hidden] {
-  display: none;
-}
-
 h2 {
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.15;
   font-weight: 820;
 }
@@ -207,14 +196,14 @@ h2 {
 
 .add-panel {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   margin-top: 0;
-  padding: 7px;
+  padding: 6px;
 }
 
 .add-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 
 .add-row input,
@@ -230,31 +219,31 @@ h2 {
 }
 
 .add-row input {
-  min-height: 38px;
+  min-height: 30px;
   flex: 1 1 auto;
-  padding: 0 12px;
+  padding: 0 10px;
   direction: rtl;
   text-align: right;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 680;
 }
 
 .add-row button,
 .save-edit-button,
 .save-settings-button {
-  min-height: 42px;
-  padding-inline: 16px;
+  min-height: 30px;
+  padding-inline: 12px;
   color: white;
   background: var(--accent);
-  border-radius: 13px;
+  border-radius: 11px;
+  font-size: 13px;
   font-weight: 820;
 }
 
 .add-row button:active,
 .save-edit-button:active,
 .save-settings-button:active,
-.settings-button:active,
-.icon-button:active {
+.settings-button:active {
   transform: translateY(1px);
 }
 
@@ -264,11 +253,11 @@ h2 {
   justify-content: flex-start;
   gap: 10px;
   width: fit-content;
-  min-height: 36px;
+  min-height: 30px;
   padding: 0 4px;
   color: var(--muted);
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 780;
 }
 
@@ -280,8 +269,8 @@ h2 {
 
 .switch-ui {
   position: relative;
-  width: 48px;
-  height: 30px;
+  width: 42px;
+  height: 26px;
   flex: 0 0 auto;
   background: rgba(118, 118, 128, 0.22);
   border-radius: 999px;
@@ -294,8 +283,8 @@ h2 {
   position: absolute;
   top: 3px;
   left: 3px;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   background: white;
   border-radius: 50%;
   box-shadow: 0 3px 8px rgba(29, 29, 31, 0.18);
@@ -307,7 +296,7 @@ h2 {
 }
 
 .email-toggle input:checked + .switch-ui::after {
-  transform: translateX(18px);
+  transform: translateX(16px);
 }
 
 .tabs {
@@ -340,7 +329,7 @@ h2 {
 }
 
 .task-panel {
-  margin-top: 12px;
+  margin-top: 10px;
   overflow: hidden;
 }
 
@@ -349,32 +338,19 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 42px;
-  padding: 0 14px;
-}
-
-.icon-button {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  color: var(--accent-strong);
-  background: rgba(75, 124, 243, 0.11);
-  border-radius: 50%;
-  font-size: 16px;
-  font-weight: 850;
+  min-height: 32px;
+  padding: 0 12px;
 }
 
 .task-list {
   display: grid;
-  padding: 3px 0;
+  padding: 1px 0;
   border-top: 1px solid rgba(53, 68, 102, 0.08);
 }
 
 .task-item {
   display: block;
-  padding: 8px 12px;
+  padding: 4px 10px;
   background: rgba(255, 255, 255, 0.36);
   border-top: 1px solid rgba(53, 68, 102, 0.07);
 }
@@ -392,13 +368,13 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  min-height: 42px;
+  gap: 9px;
+  min-height: 30px;
 }
 
 .task-title strong {
   overflow-wrap: anywhere;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.24;
   font-weight: 800;
 }
@@ -406,49 +382,38 @@ h2 {
 .task-actions {
   display: flex;
   flex: 0 0 auto;
-  gap: 7px;
+  gap: 6px;
 }
 
 .task-complete-button {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  color: var(--accent-strong);
-  background: rgba(75, 124, 243, 0.08);
-  border: 1px solid rgba(75, 124, 243, 0.22);
-  border-radius: 50%;
-}
-
-.task-complete-button svg {
   width: 19px;
   height: 19px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+  flex: 0 0 auto;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid rgba(104, 112, 132, 0.48);
+  border-radius: 5px;
 }
 
 .task-edit-button,
 .task-remove-button,
 .save-edit-button,
 .cancel-edit-button {
-  min-height: 34px;
-  border-radius: 12px;
-  font-size: 12px;
+  min-height: 26px;
+  border-radius: 10px;
+  font-size: 11px;
   font-weight: 820;
 }
 
 .task-edit-button {
-  padding-inline: 10px;
+  padding-inline: 8px;
   color: var(--accent-strong);
   background: rgba(75, 124, 243, 0.11);
 }
 
 .task-remove-button {
-  padding-inline: 10px;
+  padding-inline: 8px;
   color: #b94758;
   background: rgba(255, 236, 239, 0.9);
 }
@@ -676,11 +641,10 @@ h2 {
 }
 
 @media (max-width: 520px) {
-  .settings-button {
-    top: calc(8px + env(safe-area-inset-top));
-    left: calc(12px + env(safe-area-inset-left));
-    width: 34px;
-    height: 34px;
+  .app-footer {
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    width: min(100% - 22px, 620px);
+    padding: 6px;
   }
 
   .settings-button svg {
@@ -690,7 +654,7 @@ h2 {
 
   .app-shell {
     width: min(100% - 22px, 620px);
-    padding-top: calc(42px + env(safe-area-inset-top));
+    padding-top: calc(12px + env(safe-area-inset-top));
   }
 
   .hero {

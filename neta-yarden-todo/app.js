@@ -465,8 +465,10 @@ function render() {
 
 function renderCounts() {
   const count = state.tasks.length;
-  elements.newTaskBadge.textContent = count > 99 ? "99+" : String(count);
-  elements.newTaskBadge.hidden = count === 0;
+  if (elements.newTaskBadge) {
+    elements.newTaskBadge.textContent = count > 99 ? "99+" : String(count);
+    elements.newTaskBadge.hidden = count === 0;
+  }
   updateAppIconBadge(count);
   updateBadgePermissionStatus();
 }
@@ -520,11 +522,7 @@ function renderTask(task) {
 function renderReadonlyTaskTitle(task) {
   return `
     <div class="task-title-row">
-      <button class="task-complete-button" type="button" data-complete-id="${escapeHtml(task.id)}" aria-label="Complete task">
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="m5 12.5 4.2 4.1L19 7" />
-        </svg>
-      </button>
+      <button class="task-complete-button" type="button" data-complete-id="${escapeHtml(task.id)}" aria-label="Complete task"></button>
       <div class="task-title">
         <strong dir="auto">${escapeHtml(task.title)}</strong>
       </div>

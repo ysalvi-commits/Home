@@ -12,7 +12,7 @@
     <link rel="manifest" href="./manifest.webmanifest" />
     <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./assets/icon.svg" />
-    <link rel="stylesheet" href="./styles.css?v=rtl-list-1" />
+    <link rel="stylesheet" href="./styles.css?v=firebase-live-1" />
   </head>
   <body>
     <main class="app-shell">
@@ -21,6 +21,7 @@
           <p class="eyebrow">Yarden & Neta</p>
           <h1>Home Groceries</h1>
         </div>
+        <div id="syncStatus" class="sync-status" data-status="syncing" role="status">Connecting</div>
       </header>
 
       <nav class="app-tabs" role="tablist" aria-label="Main views">
@@ -125,6 +126,6 @@
       </div>
     </div>
     <div id="toast" class="toast" role="status" hidden></div>
-    <script src="./app.js?v=rtl-list-1" type="module"></script>
+    <script src="./app.js?v=firebase-live-1" type="module"></script>
   </body>
 </html>

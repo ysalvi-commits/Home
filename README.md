@@ -6,6 +6,7 @@ PWA פשוט בעברית לניהול קניות לבית:
 - רואים רשימת "לקנות עכשיו".
 - מוסיפים מוצרים חדשים.
 - מדביקים קבלה כדי שהסוכן ילמד מה קניתם לפעם הבאה.
+- מסונכרן בזמן אמת בין המכשירים דרך Firebase Realtime Database.
 - מתקינים באייפון דרך Safari -> Share -> Add to Home Screen.
 
 ## פיתוח מקומי
@@ -34,4 +35,19 @@ https://ysalvi-commits.github.io/Home/
 https://ysalvi-commits.github.io/Home/ofri-rom/
 ```
 
-הערה: כרגע הזיכרון נשמר מקומית בדפדפן/באייפון. שיתוף חי בין שני מכשירים דורש חיבור backend קטן בהמשך.
+## Firebase
+
+האפליקציה משתמשת ב-Firebase Authentication במצב Anonymous וב-Realtime Database.
+
+חוקי הדאטהבייס נמצאים בקובץ:
+
+```text
+firebase-realtime-database.rules.json
+```
+
+מבנה הנתונים:
+
+```text
+households/yarden-neta/items
+households/ofri-rom/items
+```

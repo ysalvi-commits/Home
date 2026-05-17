@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "households": {
+      "$householdId": {
+        ".read": "auth != null && ($householdId === 'yarden-neta' || $householdId === 'ofri-rom')",
+        ".write": "auth != null && ($householdId === 'yarden-neta' || $householdId === 'ofri-rom')"
+      }
+    }
+  }
+}

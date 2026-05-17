@@ -2,7 +2,7 @@
   "name": "Home Groceries",
   "short_name": "Groceries",
   "description": "A simple smart grocery helper for home.",
-  "start_url": "./index.html?v=rtl-list-1",
+  "start_url": "./index.html?v=firebase-live-1",
   "display": "standalone",
   "background_color": "#f7f7f8",
   "theme_color": "#f1eeff",

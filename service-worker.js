@@ -1,10 +1,12 @@
 const CACHE_PREFIX = "home-shopping-agent-";
-const CACHE_NAME = `${CACHE_PREFIX}v19`;
+const CACHE_NAME = `${CACHE_PREFIX}v20`;
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./cloud-sync.js",
+  "./sync-config.js",
   "./manifest.webmanifest",
   "./assets/icon.svg"
 ];

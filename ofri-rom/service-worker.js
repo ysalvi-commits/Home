@@ -1,10 +1,12 @@
 const CACHE_PREFIX = "ofri-rom-shopping-agent-";
-const CACHE_NAME = `${CACHE_PREFIX}v14`;
+const CACHE_NAME = `${CACHE_PREFIX}v15`;
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./cloud-sync.js",
+  "./sync-config.js",
   "./manifest.webmanifest",
   "./assets/icon.svg"
 ];

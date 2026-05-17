@@ -56,7 +56,16 @@ button {
 }
 
 .app-header {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px;
   padding: 4px 2px 18px;
+}
+
+.app-header > div {
+  min-width: 0;
 }
 
 .eyebrow,
@@ -94,6 +103,52 @@ h3 {
   color: var(--muted);
   font-size: 13px;
   font-weight: 780;
+}
+
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 7px;
+  min-height: 32px;
+  margin-top: 2px;
+  padding: 7px 10px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(60, 60, 67, 0.1);
+  border-radius: 999px;
+  box-shadow: 0 8px 22px rgba(31, 31, 35, 0.05);
+  font-size: 12px;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.sync-status::before {
+  width: 8px;
+  height: 8px;
+  background: var(--muted);
+  border-radius: 50%;
+  content: "";
+}
+
+.sync-status[data-status="live"] {
+  color: #5a4bae;
+}
+
+.sync-status[data-status="live"]::before {
+  background: #7b67c5;
+}
+
+.sync-status[data-status="syncing"]::before {
+  background: #b99365;
+}
+
+.sync-status[data-status="error"] {
+  color: #b04444;
+}
+
+.sync-status[data-status="error"]::before {
+  background: #d65f5f;
 }
 
 .needed-card,

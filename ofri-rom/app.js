@@ -1,3 +1,6 @@
+import { createCloudSync } from "./cloud-sync.js";
+import { syncConfig } from "./sync-config.js";
+
 const STORAGE_KEY = "ofri-rom-grocery-list-he-v1";
 const LEGACY_KEY = "ofri-rom-pantry-household-he-v1";
 const PDFJS_MODULE_URL = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs";
@@ -63,7 +66,7 @@ const categoryRules = [
   { category: "פארם", pattern: /משחה|toothpaste|דאודורנט|deodorant|שמפו|shampoo|רחצה|bodywash|ממחטות|tissue|טישו|ויטמין|vitamin|אקמול|תרופה|medicine/ }
 ];
 
-const state = loadState();
+let state = loadState();
 const uiState = {
   activeTab: "all",
   editingItemId: "",
@@ -72,6 +75,7 @@ const uiState = {
   lastSwipeAt: 0
 };
 const elements = {
+  syncStatus: document.querySelector("#syncStatus"),
   neededCount: document.querySelector("#neededCount"),
   neededSummary: document.querySelector("#neededSummary"),
   neededList: document.querySelector("#neededList"),
@@ -108,10 +112,17 @@ const elements = {
   shareShoppingListButton: document.querySelector("#shareShoppingListButton"),
   toast: document.querySelector("#toast")
 };
+const cloudSync = createCloudSync({
+  config: syncConfig,
+  getItems: () => state.items,
+  replaceItems: replaceItemsFromCloud,
+  onStatus: updateSyncStatus
+});
 
 render();
 bindEvents();
 registerServiceWorker();
+cloudSync.start();
 
 function item(name, category = "כללי", needed = false, note = "") {
   return {
@@ -123,6 +134,21 @@ function item(name, category = "כללי", needed = false, note = "") {
     purchaseCount: 0,
     lastBoughtAt: ""
   };
+}
+
+function replaceItemsFromCloud(items) {
+  const search = state.search;
+  state = withDefaultDetails(normalize({ items, updatedAt: new Date().toISOString() }));
+  state.search = search;
+  persistState();
+  render();
+}
+
+function updateSyncStatus({ label, mode, detail = "" }) {
+  if (!elements.syncStatus) return;
+  elements.syncStatus.textContent = label;
+  elements.syncStatus.dataset.status = mode;
+  elements.syncStatus.title = detail;
 }
 
 function loadState() {
@@ -263,7 +289,7 @@ function bindEvents() {
     state.items.forEach((entry) => {
       entry.needed = false;
     });
-    saveState("Shopping list cleared");
+    saveState("Shopping list cleared", { changedIds: state.items.map((entry) => entry.id) });
     render();
   });
 
@@ -393,7 +419,7 @@ function setNeeded(id, needed) {
   const entry = findItem(id);
   if (!entry) return;
   entry.needed = needed;
-  saveState(needed ? "Added to To Buy" : "Marked bought");
+  saveState(needed ? "Added to To Buy" : "Marked bought", { changedIds: [id] });
   render();
 }
 
@@ -405,15 +431,16 @@ function addItem(name) {
   const existing = state.items.find((entry) => entry.name.toLowerCase() === name.toLowerCase());
   if (existing) {
     existing.needed = true;
-    saveState("Added to To Buy");
+    saveState("Added to To Buy", { changedIds: [existing.id] });
     elements.newItemInput.value = "";
     render();
     return;
   }
 
-  state.items.unshift(item(name, guessCategory(name), true));
+  const entry = item(name, guessCategory(name), true);
+  state.items.unshift(entry);
   elements.newItemInput.value = "";
-  saveState("Added to Groceries");
+  saveState("Added to Groceries", { changedIds: [entry.id] });
   render();
 }
 
@@ -460,7 +487,7 @@ function saveEditedItem(event) {
   entry.name = name;
   entry.category = category;
   entry.note = note;
-  saveState("Product updated");
+  saveState("Product updated", { changedIds: [entry.id] });
   closeEditDialog();
   render();
 }
@@ -559,7 +586,7 @@ function confirmDeleteItem() {
   const entry = findItem(uiState.pendingDeleteId);
   if (!entry) return closeDeleteDialog();
   state.items = state.items.filter((candidate) => candidate.id !== entry.id);
-  saveState("Product removed");
+  saveState("Product removed", { deletedIds: [entry.id] });
   closeDeleteDialog();
   render();
 }
@@ -696,7 +723,7 @@ function learnFromReceiptText(text, emptyMessage) {
 
   const result = rememberPurchasedItems(names);
   elements.learnSummary.textContent = `Learned ${result.learned} product${result.learned === 1 ? "" : "s"}, ${result.added} new.`;
-  saveState(`Learned ${result.learned} product${result.learned === 1 ? "" : "s"}`);
+  saveState(`Learned ${result.learned} product${result.learned === 1 ? "" : "s"}`, { changedIds: result.changedIds });
   render();
   return true;
 }
@@ -774,6 +801,7 @@ async function loadPdfJs() {
 function rememberPurchasedItems(products) {
   let learned = 0;
   let added = 0;
+  const changedIds = [];
   const today = new Date().toISOString().slice(0, 10);
 
   products.forEach((product) => {
@@ -786,6 +814,7 @@ function rememberPurchasedItems(products) {
       match.lastBoughtAt = today;
       match.needed = false;
       if (note) match.note = note;
+      changedIds.push(match.id);
       learned += 1;
       return;
     }
@@ -794,11 +823,12 @@ function rememberPurchasedItems(products) {
     entry.purchaseCount = 1;
     entry.lastBoughtAt = today;
     state.items.push(entry);
+    changedIds.push(entry.id);
     learned += 1;
     added += 1;
   });
 
-  return { learned, added };
+  return { learned, added, changedIds };
 }
 
 function extractReceiptItems(text) {
@@ -903,7 +933,7 @@ function readSharedState() {
     const parsed = JSON.parse(decodeURIComponent(escape(atob(padded))));
     if (!parsed?.items?.length) return null;
     const normalized = normalize(parsed);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+    persistState(normalized);
     history.replaceState(null, "", window.location.pathname + window.location.search);
     return normalized;
   } catch {
@@ -911,10 +941,18 @@ function readSharedState() {
   }
 }
 
-function saveState(message) {
+function saveState(message, syncOptions = {}) {
   state.updatedAt = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  persistState();
+  cloudSync.save({
+    changedIds: syncOptions.changedIds || state.items.map((entry) => entry.id),
+    deletedIds: syncOptions.deletedIds || []
+  });
   if (message) toast(message);
+}
+
+function persistState(snapshot = state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
 }
 
 function toast(message) {
@@ -960,6 +998,6 @@ function registerServiceWorker() {
       return;
     }
 
-    navigator.serviceWorker.register("./service-worker.js?v=rtl-list-1").catch(() => undefined);
+    navigator.serviceWorker.register("./service-worker.js?v=firebase-live-1").catch(() => undefined);
   });
 }

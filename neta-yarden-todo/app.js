@@ -48,7 +48,6 @@ const elements = {
   sendEmailToggle: document.querySelector("#sendEmailToggle"),
   openTab: document.querySelector("#openTab"),
   doneTab: document.querySelector("#doneTab"),
-  shareButton: document.querySelector("#shareButton"),
   pullRefresh: document.querySelector("#pullRefresh"),
   settingsButton: document.querySelector("#settingsButton"),
   settingsPanel: document.querySelector("#settingsPanel"),
@@ -138,7 +137,6 @@ function bindEvents() {
 
   elements.openTab.addEventListener("click", () => setActiveTab("open"));
   elements.doneTab?.addEventListener("click", () => setActiveTab("done"));
-  elements.shareButton.addEventListener("click", shareApp);
   elements.sendEmailToggle.addEventListener("change", () => {
     localStorage.setItem(EMAIL_PREF_KEY, elements.sendEmailToggle.checked ? "true" : "false");
   });
@@ -607,31 +605,6 @@ function openMailDraft(payload) {
   window.setTimeout(() => {
     window.location.href = mailto;
   }, 250);
-}
-
-async function shareApp() {
-  const appLink = getShareLink();
-  const shareData = {
-    title: "To Do - Neta and Yarden",
-    text: "Our list",
-    url: appLink
-  };
-
-  if (navigator.share) {
-    try {
-      await navigator.share(shareData);
-      return;
-    } catch {
-      return;
-    }
-  }
-
-  try {
-    await navigator.clipboard.writeText(appLink);
-    toast("Link copied.");
-  } catch {
-    toast(appLink);
-  }
 }
 
 function saveState({ refreshUpdatedAt = true } = {}) {

@@ -6,6 +6,7 @@ const RECIPIENTS = ["yardensalvi@gmail.com", "barakneta1@gmail.com"];
 const EMAIL_ENDPOINT = window.TODO_EMAIL_ENDPOINT || "";
 const SHARE_HASH_PREFIX = "#tasks=";
 const PULL_REFRESH_THRESHOLD = 82;
+const PULL_REFRESH_START_LIMIT = 220;
 const AUTO_REFRESH_AFTER_HIDDEN_MS = 15_000;
 const FIREBASE_SDK_VERSION = "12.7.0";
 const FIREBASE_CONFIG = {
@@ -82,6 +83,10 @@ function bindEvents() {
   window.addEventListener("pointermove", movePullRefresh, { passive: false });
   window.addEventListener("pointerup", endPullRefresh);
   window.addEventListener("pointercancel", cancelPullRefresh);
+  window.addEventListener("touchstart", startPullRefresh, { passive: true });
+  window.addEventListener("touchmove", movePullRefresh, { passive: false });
+  window.addEventListener("touchend", endPullRefresh);
+  window.addEventListener("touchcancel", cancelPullRefresh);
   document.addEventListener("visibilitychange", handleVisibilityRefresh);
   window.addEventListener("focus", handleFocusRefresh);
 
@@ -334,11 +339,14 @@ function closeSettings() {
 }
 
 function startPullRefresh(event) {
-  if (window.scrollY > 2 || event.clientY > 180) return;
-  if (closestElement(event.target, "button, input, textarea, .task-item, .settings-panel")) return;
+  const y = getPullClientY(event);
+  if (!y && y !== 0) return;
+  if (window.scrollY > 2 || y > PULL_REFRESH_START_LIMIT) return;
+  if (closestElement(event.target, "button, input, textarea, .settings-panel")) return;
 
   uiState.refresh = {
-    startY: event.clientY,
+    startY: y,
+    startX: getPullClientX(event),
     active: false,
     ready: false,
     refreshing: false
@@ -349,8 +357,18 @@ function movePullRefresh(event) {
   const refresh = uiState.refresh;
   if (!refresh || refresh.refreshing) return;
 
-  const deltaY = event.clientY - refresh.startY;
+  const currentY = getPullClientY(event);
+  const currentX = getPullClientX(event);
+  if (!currentY && currentY !== 0) return;
+
+  const deltaY = currentY - refresh.startY;
+  const deltaX = Math.abs(currentX - refresh.startX);
   if (deltaY <= 0) {
+    cancelPullRefresh();
+    return;
+  }
+
+  if (!refresh.active && deltaX > deltaY * 0.8) {
     cancelPullRefresh();
     return;
   }
@@ -358,17 +376,13 @@ function movePullRefresh(event) {
   if (deltaY < 10) return;
   refresh.active = true;
   refresh.ready = deltaY >= PULL_REFRESH_THRESHOLD;
-  const distance = Math.min(112, Math.round(deltaY * 0.68));
-  elements.pullRefresh.style.setProperty("--pull-distance", `${distance}px`);
-  elements.pullRefresh.textContent = refresh.ready ? "Release to refresh" : "Pull to refresh";
-  elements.pullRefresh.classList.toggle("is-active", true);
-  elements.pullRefresh.classList.toggle("is-ready", refresh.ready);
   event.preventDefault();
 }
 
 function endPullRefresh() {
   const refresh = uiState.refresh;
   if (!refresh) return;
+  if (refresh.refreshing) return;
 
   if (refresh.active && refresh.ready) {
     refresh.refreshing = true;
@@ -392,12 +406,8 @@ function resetPullRefresh() {
 }
 
 function refreshApp() {
-  elements.pullRefresh.textContent = "Refreshing";
-  elements.pullRefresh.classList.add("is-active", "is-loading");
-  elements.pullRefresh.style.setProperty("--pull-distance", "74px");
-
   if (syncState.ready) {
-    refreshFromRemote().finally(() => {
+    refreshFromRemote({ silent: true }).finally(() => {
       window.setTimeout(resetPullRefresh, 360);
     });
     return;
@@ -409,6 +419,20 @@ function refreshApp() {
   window.setTimeout(() => {
     window.location.reload();
   }, 260);
+}
+
+function getPullClientY(event) {
+  if (typeof event.clientY === "number") return event.clientY;
+  if (event.touches?.[0]) return event.touches[0].clientY;
+  if (event.changedTouches?.[0]) return event.changedTouches[0].clientY;
+  return null;
+}
+
+function getPullClientX(event) {
+  if (typeof event.clientX === "number") return event.clientX;
+  if (event.touches?.[0]) return event.touches[0].clientX;
+  if (event.changedTouches?.[0]) return event.changedTouches[0].clientX;
+  return 0;
 }
 
 function handleVisibilityRefresh() {
@@ -429,7 +453,7 @@ function maybeAutoRefresh() {
   if (Date.now() - uiState.hiddenAt < AUTO_REFRESH_AFTER_HIDDEN_MS) return;
   if (uiState.editingTaskId || elements.taskInput.value.trim()) return;
   if (syncState.ready) {
-    refreshFromRemote();
+    refreshFromRemote({ silent: true });
     return;
   }
   refreshApp();
@@ -689,16 +713,16 @@ function applyRemoteSnapshot(remoteValue) {
   flushPendingRemotePatches();
 }
 
-async function refreshFromRemote() {
+async function refreshFromRemote({ silent = false } = {}) {
   if (!syncState.ready || !syncState.api || !syncState.listRef) return;
 
   try {
     const snapshot = await syncState.api.get(syncState.listRef);
     applyRemoteSnapshot(snapshot.val());
-    toast("Updated.");
+    if (!silent) toast("Updated.");
   } catch (error) {
     console.warn("Refresh failed", error);
-    toast("Could not refresh.");
+    if (!silent) toast("Could not refresh.");
   }
 }
 

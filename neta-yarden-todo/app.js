@@ -54,6 +54,8 @@ const elements = {
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
   closeSettingsButton: document.querySelector("#closeSettingsButton"),
   saveSettingsButton: document.querySelector("#saveSettingsButton"),
+  badgePermissionButton: document.querySelector("#badgePermissionButton"),
+  badgePermissionText: document.querySelector("#badgePermissionText"),
   snailParty: document.querySelector("#snailParty"),
   toast: document.querySelector("#toast")
 };
@@ -63,6 +65,7 @@ elements.userNameInput.value = readUserName();
 render();
 bindEvents();
 registerServiceWorker();
+updateBadgePermissionStatus();
 initializeSharedBackend();
 
 function bindEvents() {
@@ -138,6 +141,7 @@ function bindEvents() {
   elements.settingsButton.addEventListener("click", openSettings);
   elements.settingsBackdrop.addEventListener("click", closeSettings);
   elements.closeSettingsButton.addEventListener("click", closeSettings);
+  elements.badgePermissionButton.addEventListener("click", requestBadgePermission);
   elements.saveSettingsButton.addEventListener("click", () => {
     localStorage.setItem(USER_NAME_KEY, elements.userNameInput.value.trim());
     closeSettings();
@@ -313,6 +317,7 @@ function setActiveTab(tab) {
 
 function openSettings() {
   elements.userNameInput.value = readUserName();
+  updateBadgePermissionStatus();
   elements.settingsPanel.hidden = false;
   requestAnimationFrame(() => {
     elements.settingsPanel.classList.add("is-open");
@@ -441,6 +446,7 @@ function renderCounts() {
   elements.newTaskBadge.textContent = count > 99 ? "99+" : String(count);
   elements.newTaskBadge.hidden = count === 0;
   updateAppIconBadge(count);
+  updateBadgePermissionStatus();
 }
 
 function renderTabs() {
@@ -942,6 +948,59 @@ function updateAppIconBadge(count) {
   if (count === 0 && "clearAppBadge" in navigator) {
     navigator.clearAppBadge().catch(() => undefined);
   }
+}
+
+async function requestBadgePermission() {
+  if (!("Notification" in window)) {
+    toast("App badges are not supported here.");
+    updateBadgePermissionStatus();
+    return;
+  }
+
+  if (Notification.permission !== "granted") {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      toast("App badge permission was not enabled.");
+      updateBadgePermissionStatus();
+      return;
+    }
+  }
+
+  updateAppIconBadge(state.tasks.length);
+  updateBadgePermissionStatus();
+  toast("App badge enabled.");
+}
+
+function updateBadgePermissionStatus() {
+  if (!elements.badgePermissionButton || !elements.badgePermissionText) return;
+
+  const supportsBadge = "setAppBadge" in navigator || "clearAppBadge" in navigator;
+  const supportsNotifications = "Notification" in window;
+
+  if (!supportsBadge) {
+    elements.badgePermissionButton.disabled = true;
+    elements.badgePermissionButton.textContent = "App badge unavailable";
+    elements.badgePermissionText.textContent = "Add the app to the Home Screen on a supported iPhone or browser to use icon badges.";
+    return;
+  }
+
+  if (!supportsNotifications) {
+    elements.badgePermissionButton.disabled = true;
+    elements.badgePermissionButton.textContent = "App badge unavailable";
+    elements.badgePermissionText.textContent = "This browser does not expose notification permission for icon badges.";
+    return;
+  }
+
+  if (Notification.permission === "granted") {
+    elements.badgePermissionButton.disabled = false;
+    elements.badgePermissionButton.textContent = "Refresh app badge";
+    elements.badgePermissionText.textContent = `Current badge count: ${state.tasks.length}`;
+    return;
+  }
+
+  elements.badgePermissionButton.disabled = false;
+  elements.badgePermissionButton.textContent = "Enable app badge";
+  elements.badgePermissionText.textContent = "Allow notifications once so the Home Screen icon can show the open-task count.";
 }
 
 function closestElement(target, selector) {

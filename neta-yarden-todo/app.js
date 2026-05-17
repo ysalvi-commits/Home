@@ -22,7 +22,6 @@ const FIREBASE_LIST_PATH = "lists/neta-yarden";
 const uiState = {
   activeTab: "open",
   editingTaskId: "",
-  swipe: null,
   refresh: null,
   hiddenAt: 0
 };
@@ -76,10 +75,6 @@ function bindEvents() {
     localStorage.setItem(USER_NAME_KEY, elements.userNameInput.value.trim());
   });
 
-  elements.taskList.addEventListener("pointerdown", startSwipe);
-  window.addEventListener("pointermove", moveSwipe);
-  window.addEventListener("pointerup", endSwipe);
-  window.addEventListener("pointercancel", cancelSwipe);
   window.addEventListener("pointerdown", startPullRefresh);
   window.addEventListener("pointermove", movePullRefresh, { passive: false });
   window.addEventListener("pointerup", endPullRefresh);
@@ -88,8 +83,9 @@ function bindEvents() {
   window.addEventListener("focus", handleFocusRefresh);
 
   elements.taskList.addEventListener("click", (event) => {
-    if (uiState.swipe?.completed) {
-      event.preventDefault();
+    const completeButton = closestElement(event.target, "button[data-complete-id]");
+    if (completeButton) {
+      finishTask(completeButton.dataset.completeId);
       return;
     }
 
@@ -133,7 +129,7 @@ function bindEvents() {
   });
 
   elements.openTab.addEventListener("click", () => setActiveTab("open"));
-  elements.doneTab.addEventListener("click", () => setActiveTab("done"));
+  elements.doneTab?.addEventListener("click", () => setActiveTab("done"));
   elements.shareButton.addEventListener("click", shareApp);
   elements.sendEmailToggle.addEventListener("change", () => {
     localStorage.setItem(EMAIL_PREF_KEY, elements.sendEmailToggle.checked ? "true" : "false");
@@ -251,7 +247,7 @@ function finishTask(taskId) {
   state.completedTasks.unshift(completedTask);
 
   uiState.editingTaskId = "";
-  uiState.activeTab = "done";
+  uiState.activeTab = "open";
   saveState();
   render();
   completeTaskInRemote(task.id, completedTask);
@@ -315,77 +311,6 @@ function setActiveTab(tab) {
   render();
 }
 
-function startSwipe(event) {
-  const row = closestElement(event.target, ".swipe-task");
-  if (!row || closestElement(event.target, "button, input")) return;
-  if (typeof event.button === "number" && event.button !== 0) return;
-
-  const content = row.querySelector(".task-content");
-  uiState.swipe = {
-    id: row.dataset.taskId,
-    startX: event.clientX,
-    startY: event.clientY,
-    lastX: event.clientX,
-    row,
-    content,
-    dragging: false,
-    completed: false
-  };
-
-  try {
-    row.setPointerCapture?.(event.pointerId);
-  } catch {
-    // Some browsers only allow pointer capture on the original target.
-  }
-}
-
-function moveSwipe(event) {
-  const swipe = uiState.swipe;
-  if (!swipe || swipe.completed) return;
-
-  const deltaX = event.clientX - swipe.startX;
-  const deltaY = event.clientY - swipe.startY;
-  if (!swipe.dragging && Math.abs(deltaX) < 9) return;
-  if (!swipe.dragging && Math.abs(deltaY) > Math.abs(deltaX) * 1.1) {
-    cancelSwipe();
-    return;
-  }
-
-  swipe.dragging = true;
-  swipe.lastX = event.clientX;
-  const movement = Math.max(-136, Math.min(136, deltaX));
-  swipe.row.classList.toggle("is-swipe-ready", Math.abs(deltaX) > 86);
-  swipe.content.style.transform = `translateX(${movement}px)`;
-  event.preventDefault();
-}
-
-function endSwipe(event) {
-  const swipe = uiState.swipe;
-  if (!swipe) return;
-
-  const endX = typeof event?.clientX === "number" ? event.clientX : swipe.lastX;
-  const deltaX = endX - swipe.startX;
-  if (swipe.dragging && Math.abs(deltaX) > 96) {
-    swipe.completed = true;
-    finishTask(swipe.id);
-    uiState.swipe = null;
-    return;
-  }
-
-  resetSwipe(swipe);
-  uiState.swipe = null;
-}
-
-function cancelSwipe() {
-  if (uiState.swipe) resetSwipe(uiState.swipe);
-  uiState.swipe = null;
-}
-
-function resetSwipe(swipe) {
-  swipe.row.classList.remove("is-swipe-ready");
-  swipe.content.style.transform = "";
-}
-
 function openSettings() {
   elements.userNameInput.value = readUserName();
   elements.settingsPanel.hidden = false;
@@ -405,7 +330,7 @@ function closeSettings() {
 
 function startPullRefresh(event) {
   if (window.scrollY > 2 || event.clientY > 180) return;
-  if (closestElement(event.target, "button, input, textarea, .swipe-task, .settings-panel")) return;
+  if (closestElement(event.target, "button, input, textarea, .task-item, .settings-panel")) return;
 
   uiState.refresh = {
     startY: event.clientY,
@@ -520,9 +445,9 @@ function renderCounts() {
 
 function renderTabs() {
   elements.openTab.textContent = state.tasks.length ? `Open · ${state.tasks.length}` : "Open";
-  elements.doneTab.textContent = state.completedTasks.length ? `Wins · ${state.completedTasks.length}` : "Wins";
+  if (elements.doneTab) elements.doneTab.textContent = state.completedTasks.length ? `Wins · ${state.completedTasks.length}` : "Wins";
   elements.openTab.classList.toggle("is-active", uiState.activeTab === "open");
-  elements.doneTab.classList.toggle("is-active", uiState.activeTab === "done");
+  elements.doneTab?.classList.toggle("is-active", uiState.activeTab === "done");
 }
 
 function renderTasks() {
@@ -558,16 +483,8 @@ function renderTask(task) {
   const isEditing = uiState.editingTaskId === task.id;
 
   return `
-    <article class="task-item swipe-task" data-task-id="${escapeHtml(task.id)}">
-      <div class="swipe-complete-bg" aria-hidden="true">Done</div>
-      <div class="task-content">
-        ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
-        <div class="swipe-cue" aria-hidden="true">
-          <span class="swipe-arrows">← ← ←</span>
-          <span>Swipe me to done</span>
-          <span class="swipe-arrows">→ → →</span>
-        </div>
-      </div>
+    <article class="task-item" data-task-id="${escapeHtml(task.id)}">
+      ${isEditing ? renderEditTaskTitle(task) : renderReadonlyTaskTitle(task)}
     </article>
   `;
 }
@@ -575,6 +492,11 @@ function renderTask(task) {
 function renderReadonlyTaskTitle(task) {
   return `
     <div class="task-title-row">
+      <button class="task-complete-button" type="button" data-complete-id="${escapeHtml(task.id)}" aria-label="Complete task">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m5 12.5 4.2 4.1L19 7" />
+        </svg>
+      </button>
       <div class="task-title">
         <strong dir="auto">${escapeHtml(task.title)}</strong>
       </div>

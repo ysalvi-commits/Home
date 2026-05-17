@@ -543,40 +543,6 @@ h2 {
   font-weight: 650;
 }
 
-.badge-setting {
-  display: grid;
-  gap: 7px;
-  margin-top: 12px;
-  padding: 12px;
-  background: rgba(75, 124, 243, 0.07);
-  border: 1px solid rgba(75, 124, 243, 0.12);
-  border-radius: 14px;
-}
-
-.badge-setting button {
-  width: fit-content;
-  min-height: 36px;
-  padding: 0 13px;
-  color: white;
-  background: var(--accent);
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 820;
-}
-
-.badge-setting button:disabled {
-  cursor: default;
-  color: var(--muted);
-  background: rgba(118, 118, 128, 0.14);
-}
-
-.badge-setting p {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.35;
-  font-weight: 650;
-}
-
 .save-settings-button {
   width: 100%;
   margin-top: 14px;
@@ -599,45 +565,22 @@ h2 {
   font-weight: 780;
 }
 
-.snail-party {
-  position: fixed;
-  inset: 0;
-  z-index: 45;
-  pointer-events: none;
-  overflow: hidden;
-  opacity: 0;
-  transition: opacity 180ms ease;
+.toast.has-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
 }
 
-.snail-party.is-active {
-  opacity: 1;
-}
-
-.snail-party span {
-  position: absolute;
-  left: var(--x);
-  bottom: -84px;
-  font-size: var(--size);
-  filter: drop-shadow(0 12px 18px rgba(29, 29, 31, 0.16));
-  transform: translateX(var(--drift));
-  animation: snail-party var(--duration) cubic-bezier(0.18, 0.8, 0.24, 1) var(--delay) forwards;
-}
-
-@keyframes snail-party {
-  0% {
-    transform: translate3d(var(--drift), 80px, 0) rotate(-12deg) scale(0.72);
-    opacity: 0;
-  }
-  12% {
-    opacity: 1;
-  }
-  58% {
-    transform: translate3d(calc(var(--drift) * -0.5), -55vh, 0) rotate(14deg) scale(1.08);
-  }
-  100% {
-    transform: translate3d(var(--drift), -112vh, 0) rotate(32deg) scale(0.9);
-    opacity: 0;
-  }
+.toast.has-action button {
+  min-height: 30px;
+  padding: 0 12px;
+  color: var(--text);
+  background: white;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 850;
 }
 
 @media (max-width: 520px) {
@@ -701,10 +644,7 @@ h2 {
     scroll-behavior: auto !important;
   }
 
-  .settings-sheet,
-  .snail-party,
-  .snail-party span {
+  .settings-sheet {
     transition-duration: 0.01ms !important;
-    animation-duration: 1.2s !important;
   }
 }

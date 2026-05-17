@@ -24,7 +24,8 @@ const uiState = {
   activeTab: "open",
   editingTaskId: "",
   refresh: null,
-  hiddenAt: 0
+  hiddenAt: 0,
+  undoCompletion: null
 };
 
 const syncState = {
@@ -54,9 +55,6 @@ const elements = {
   settingsBackdrop: document.querySelector("#settingsBackdrop"),
   closeSettingsButton: document.querySelector("#closeSettingsButton"),
   saveSettingsButton: document.querySelector("#saveSettingsButton"),
-  badgePermissionButton: document.querySelector("#badgePermissionButton"),
-  badgePermissionText: document.querySelector("#badgePermissionText"),
-  snailParty: document.querySelector("#snailParty"),
   toast: document.querySelector("#toast")
 };
 
@@ -65,7 +63,6 @@ elements.userNameInput.value = readUserName();
 render();
 bindEvents();
 registerServiceWorker();
-updateBadgePermissionStatus();
 initializeSharedBackend();
 
 function bindEvents() {
@@ -144,12 +141,12 @@ function bindEvents() {
   elements.settingsButton.addEventListener("click", openSettings);
   elements.settingsBackdrop.addEventListener("click", closeSettings);
   elements.closeSettingsButton.addEventListener("click", closeSettings);
-  elements.badgePermissionButton.addEventListener("click", requestBadgePermission);
   elements.saveSettingsButton.addEventListener("click", () => {
     localStorage.setItem(USER_NAME_KEY, elements.userNameInput.value.trim());
     closeSettings();
     toast("User name saved.");
   });
+  elements.toast.addEventListener("click", handleToastClick);
 }
 
 function loadState() {
@@ -258,8 +255,29 @@ function finishTask(taskId) {
   saveState();
   render();
   completeTaskInRemote(task.id, completedTask);
-  celebrateSnails();
-  toast("Achievement unlocked.");
+  showUndoCompletion(task, completedTask, index);
+}
+
+function undoCompletedTask() {
+  const undo = uiState.undoCompletion;
+  if (!undo) return;
+
+  const completedIndex = state.completedTasks.findIndex((task) => task.id === undo.completedTask.id);
+  if (completedIndex !== -1) state.completedTasks.splice(completedIndex, 1);
+
+  if (!state.tasks.some((task) => task.id === undo.task.id)) {
+    const insertIndex = Math.min(undo.index, state.tasks.length);
+    state.tasks.splice(insertIndex, 0, undo.task);
+  }
+
+  uiState.undoCompletion = null;
+  uiState.editingTaskId = "";
+  uiState.activeTab = "open";
+  saveState();
+  render();
+  undoCompleteTaskInRemote(undo.task, undo.completedTask.id);
+  window.clearTimeout(toast.timer);
+  hideToast();
 }
 
 function removeTask(taskId) {
@@ -320,7 +338,6 @@ function setActiveTab(tab) {
 
 function openSettings() {
   elements.userNameInput.value = readUserName();
-  updateBadgePermissionStatus();
   elements.settingsPanel.hidden = false;
   requestAnimationFrame(() => {
     elements.settingsPanel.classList.add("is-open");
@@ -470,7 +487,6 @@ function renderCounts() {
     elements.newTaskBadge.hidden = count === 0;
   }
   updateAppIconBadge(count);
-  updateBadgePermissionStatus();
 }
 
 function renderTabs() {
@@ -727,6 +743,14 @@ function completeTaskInRemote(taskId, completedTask) {
   });
 }
 
+function undoCompleteTaskInRemote(task, completedTaskId) {
+  return updateRemote({
+    [`tasks/${task.id}`]: serializeTask(task),
+    [`completedTasks/${completedTaskId}`]: null,
+    updatedAt: new Date().toISOString()
+  });
+}
+
 function writeFullSnapshotToRemote() {
   if (!syncState.ready || !syncState.api || !syncState.listRef) return Promise.resolve();
 
@@ -868,31 +892,6 @@ function readUserName() {
   return (localStorage.getItem(USER_NAME_KEY) || "").trim();
 }
 
-function celebrateSnails() {
-  elements.snailParty.innerHTML = "";
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const count = reducedMotion ? 12 : 42;
-  const snails = ["🐌", "🐌🎉", "🐌✨", "🎊🐌"];
-
-  for (let index = 0; index < count; index += 1) {
-    const snail = document.createElement("span");
-    snail.textContent = snails[index % snails.length];
-    snail.style.setProperty("--x", `${Math.random() * 100}%`);
-    snail.style.setProperty("--drift", `${Math.random() * 90 - 45}px`);
-    snail.style.setProperty("--delay", `${Math.random() * 0.7}s`);
-    snail.style.setProperty("--duration", `${2.2 + Math.random() * 1.2}s`);
-    snail.style.setProperty("--size", `${24 + Math.random() * 28}px`);
-    elements.snailParty.appendChild(snail);
-  }
-
-  elements.snailParty.classList.add("is-active");
-  window.clearTimeout(celebrateSnails.timer);
-  celebrateSnails.timer = window.setTimeout(() => {
-    elements.snailParty.classList.remove("is-active");
-    elements.snailParty.innerHTML = "";
-  }, reducedMotion ? 1600 : 3200);
-}
-
 function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -945,59 +944,6 @@ function updateAppIconBadge(count) {
   }
 }
 
-async function requestBadgePermission() {
-  if (!("Notification" in window)) {
-    toast("App badges are not supported here.");
-    updateBadgePermissionStatus();
-    return;
-  }
-
-  if (Notification.permission !== "granted") {
-    const permission = await Notification.requestPermission();
-    if (permission !== "granted") {
-      toast("App badge permission was not enabled.");
-      updateBadgePermissionStatus();
-      return;
-    }
-  }
-
-  updateAppIconBadge(state.tasks.length);
-  updateBadgePermissionStatus();
-  toast("App badge enabled.");
-}
-
-function updateBadgePermissionStatus() {
-  if (!elements.badgePermissionButton || !elements.badgePermissionText) return;
-
-  const supportsBadge = "setAppBadge" in navigator || "clearAppBadge" in navigator;
-  const supportsNotifications = "Notification" in window;
-
-  if (!supportsBadge) {
-    elements.badgePermissionButton.disabled = true;
-    elements.badgePermissionButton.textContent = "App badge unavailable";
-    elements.badgePermissionText.textContent = "Add the app to the Home Screen on a supported iPhone or browser to use icon badges.";
-    return;
-  }
-
-  if (!supportsNotifications) {
-    elements.badgePermissionButton.disabled = true;
-    elements.badgePermissionButton.textContent = "App badge unavailable";
-    elements.badgePermissionText.textContent = "This browser does not expose notification permission for icon badges.";
-    return;
-  }
-
-  if (Notification.permission === "granted") {
-    elements.badgePermissionButton.disabled = false;
-    elements.badgePermissionButton.textContent = "Refresh app badge";
-    elements.badgePermissionText.textContent = `Current badge count: ${state.tasks.length}`;
-    return;
-  }
-
-  elements.badgePermissionButton.disabled = false;
-  elements.badgePermissionButton.textContent = "Enable app badge";
-  elements.badgePermissionText.textContent = "Allow notifications once so the Home Screen icon can show the open-task count.";
-}
-
 function closestElement(target, selector) {
   const element = target instanceof Element ? target : target?.parentElement;
   return element?.closest(selector) || null;
@@ -1016,13 +962,47 @@ function cssEscape(value) {
   return window.CSS?.escape ? window.CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&");
 }
 
+function handleToastClick(event) {
+  if (!closestElement(event.target, "button[data-undo-complete]")) return;
+  undoCompletedTask();
+}
+
+function showUndoCompletion(task, completedTask, index) {
+  uiState.undoCompletion = { task, completedTask, index };
+
+  elements.toast.replaceChildren();
+  const message = document.createElement("span");
+  message.textContent = "Task completed.";
+  const button = document.createElement("button");
+  button.type = "button";
+  button.dataset.undoComplete = "true";
+  button.textContent = "Undo";
+  elements.toast.append(message, button);
+  elements.toast.classList.add("has-action");
+  elements.toast.hidden = false;
+
+  window.clearTimeout(toast.timer);
+  toast.timer = window.setTimeout(() => {
+    uiState.undoCompletion = null;
+    hideToast();
+  }, 6000);
+}
+
 function toast(message) {
+  uiState.undoCompletion = null;
+  elements.toast.classList.remove("has-action");
   elements.toast.textContent = message;
   elements.toast.hidden = false;
   window.clearTimeout(toast.timer);
   toast.timer = window.setTimeout(() => {
-    elements.toast.hidden = true;
+    hideToast();
   }, 2400);
+}
+
+function hideToast() {
+  elements.toast.hidden = true;
+  elements.toast.classList.remove("has-action");
+  elements.toast.replaceChildren();
 }
 
 function registerServiceWorker() {
